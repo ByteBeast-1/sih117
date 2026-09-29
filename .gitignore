@@ -1,0 +1,40 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# Database files (regenerated on startup)
+*.db
+*.sqlite3
+
+# ChromaDB data (regenerated on startup)
+chroma_data/
+
+# Environment files with secrets
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.egg-info/
+build/
