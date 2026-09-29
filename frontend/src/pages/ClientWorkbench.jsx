@@ -131,6 +131,18 @@ export default function ClientWorkbench() {
                       <div className="bg-surface-200/50 text-slate-200 px-5 py-4 rounded-2xl rounded-tl-sm border border-surface-300 shadow-sm whitespace-pre-wrap">
                         {msg.content}
                       </div>
+                      
+                      {/* Local Execution Proof Badge */}
+                      <div className="flex items-center gap-2 mt-1 opacity-70">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 className="w-3 h-3" />
+                          100% Local Execution (Zero External APIs)
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          <BrainCircuit className="w-3 h-3" />
+                          Processed by On-Premise Model
+                        </span>
+                      </div>
 
                       {msg.agentRoute && (
                         <button

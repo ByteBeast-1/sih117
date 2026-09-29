@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Play, Box, FileCode, CheckCircle2, TerminalSquare, AlertTriangle } from 'lucide-react'
 import ClientSidebar from '../components/layout/ClientSidebar'
+import { apiClient } from '../services/api'
 
 export default function CodeSandbox() {
   const [messages, setMessages] = useState([
@@ -29,40 +30,44 @@ export default function CodeSandbox() {
     setIsProcessing(true)
 
     try {
-      await new Promise(r => setTimeout(r, 1500))
-      
-      const isComplex = userMsg.content.toLowerCase().includes('docker') || userMsg.content.toLowerCase().includes('complex')
+      const res = await apiClient.sendMessage(`[Code Sandbox] ${userMsg.content}`)
       
       const assistantMsg = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: isComplex 
-          ? `This task requires heavy execution. 🔄 Initiating Docker Sandbox link... \n\nI have written the orchestration script in the editor. Review it and hit "Run Sandbox".`
-          : `I've updated the script in the workspace. You can review and execute it.`,
+        content: res.reply || 'Code generated.',
       }
       setMessages(prev => [...prev, assistantMsg])
       
-      if (isComplex) {
-        setCode("import docker\nimport pandas as pd\n\ndef run_heavy_pipeline():\n    print('Connecting to Docker daemon...')\n    # Pipeline orchestration\n    pass\n\nrun_heavy_pipeline()")
+      // If code was generated in the reply, try to extract it
+      const codeMatch = res.reply?.match(/```python\n([\s\S]*?)```/)
+      if (codeMatch && codeMatch[1]) {
+        setCode(codeMatch[1])
       }
       
     } catch (err) {
-      setMessages(prev => [...prev, { id: Date.now(), role: 'error', content: 'Sandbox connection failed.' }])
+      setMessages(prev => [...prev, { id: Date.now(), role: 'error', content: `Sandbox connection failed: ${err.message}` }])
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const runCode = () => {
+  const runCode = async () => {
     setIsSandboxRunning(true)
     setOutput('Initiating secure execution container...\n')
-    setTimeout(() => {
-      setOutput(prev => prev + 'Mounting volumes...\n')
-    }, 500)
-    setTimeout(() => {
-      setOutput(prev => prev + 'Running script main.py...\n---\nHello MRPL Sandbox\nExecution completed with exit code 0.\n')
+    
+    try {
+      const res = await apiClient.executeCode(code)
+      if (res.success) {
+        setOutput(`Execution completed successfully.\n---\n${res.stdout}`)
+      } else {
+        setOutput(`Execution failed (Exit Code ${res.exit_code}).\n---\n${res.stderr || res.stdout}`)
+      }
+    } catch (err) {
+      setOutput(`Error connecting to sandbox: ${err.message}`)
+    } finally {
       setIsSandboxRunning(false)
-    }, 1500)
+    }
   }
 
   return (
