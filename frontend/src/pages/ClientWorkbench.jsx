@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Send, Mic, Camera, BrainCircuit, CheckCircle2, ChevronRight, Activity } from 'lucide-react'
 import ClientSidebar from '../components/layout/ClientSidebar'
 import AgentExploreGrid from '../components/chat/AgentExploreGrid'
+import { apiClient } from '../services/api'
 
 const AGENT_ROUTES = [
   { keywords: ['analyze', 'pdf', 'ppt', 'excel', 'notes', 'log', 'architecture', 'diagram', 'flowchart'], agent: 'Analyser Agent', path: '/analyzer' },
@@ -83,26 +84,28 @@ export default function ClientWorkbench() {
     setThinkingSteps(prev => [
       ...prev.slice(0, 1),
       { id: 2, text: 'No specialized agent needed. General chat.', status: 'done' },
-      { id: 3, text: 'Retrieving context from internal RAG...', status: 'loading' }
+      { id: 3, text: 'Sending to backend Supervisor agent...', status: 'loading' }
     ])
 
     try {
-      await new Promise(r => setTimeout(r, 1200))
+      const res = await apiClient.sendMessage(currentInput)
       
-      setThinkingSteps(prev => [
-        ...prev.slice(0, 2),
-        { id: 3, text: 'Context retrieved (0 sources).', status: 'done' },
-        { id: 4, text: 'Formulating response...', status: 'done' }
-      ])
+      setThinkingSteps(res.thinking_trace?.map((step, idx) => ({
+        id: idx + 1,
+        text: step,
+        status: 'done'
+      })) || [{id: 1, text: 'Done', status: 'done'}])
 
       const assistantMsg = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: `Based on general context, here is what I found regarding "${currentInput}":\n\nThis was processed by the Orchestrator's general chat pipeline.`,
+        content: res.reply || 'No response from backend',
+        citations: res.citations || [],
+        sandbox_result: res.sandbox_result,
       }
       setMessages(prev => [...prev, assistantMsg])
     } catch (err) {
-      setMessages(prev => [...prev, { id: Date.now(), role: 'error', content: 'Failed to process request.' }])
+      setMessages(prev => [...prev, { id: Date.now(), role: 'error', content: `Failed to process request: ${err.message}` }])
     } finally {
       setIsProcessing(false)
     }

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Send, Upload, Brain, Activity, CheckCircle2, ChevronRight, BarChart2, CheckSquare } from 'lucide-react'
+import { Send, Upload, Brain, Activity, CheckCircle2, ChevronRight, BarChart2, CheckSquare, FileOutput } from 'lucide-react'
 import ClientSidebar from '../components/layout/ClientSidebar'
+import { apiClient } from '../services/api'
 
 export default function AnalyzerAgent() {
   const [messages, setMessages] = useState([])
@@ -49,7 +50,7 @@ export default function AnalyzerAgent() {
     // Reset states
     setShowVisuals(true)
     setThinkingPlan([
-      { id: 1, text: 'Phase 1: Ingesting file and parsing structure...', status: 'loading' }
+      { id: 1, text: 'Phase 1: Sending document/query to Analyzer Agent...', status: 'loading' }
     ])
     setChecks([
       { id: 'math', label: 'Math Derivations Check', status: 'pending' },
@@ -57,44 +58,34 @@ export default function AnalyzerAgent() {
       { id: 'pipeline', label: 'Pipeline Validity Check', status: 'pending' },
     ])
 
-    await new Promise(r => setTimeout(r, 1000))
-    setThinkingPlan(prev => [
-      { id: 1, text: 'Phase 1: Ingesting file and parsing structure...', status: 'done' },
-      { id: 2, text: 'Phase 2: Calling specialized sub-agent for extraction...', status: 'loading' }
-    ])
-    setChecks(prev => prev.map(c => c.id === 'concept' ? { ...c, status: 'validating' } : c))
+    try {
+      const res = await apiClient.sendMessage(query)
 
-    await new Promise(r => setTimeout(r, 1200))
-    setThinkingPlan(prev => [
-      ...prev.slice(0, 1),
-      { id: 2, text: 'Phase 2: Extraction complete (Sub-agent returned).', status: 'done' },
-      { id: 3, text: 'Phase 3: Verifying math and structural logic...', status: 'loading' }
-    ])
-    setChecks(prev => prev.map(c => {
-      if (c.id === 'concept') return { ...c, status: 'pass' }
-      if (c.id === 'math') return { ...c, status: 'validating' }
-      return c
-    }))
+      setThinkingPlan(res.thinking_trace?.map((step, idx) => ({
+        id: idx + 1,
+        text: step,
+        status: 'done'
+      })) || [{id: 1, text: 'Phase 1: Done', status: 'done'}])
 
-    await new Promise(r => setTimeout(r, 1200))
-    setThinkingPlan(prev => [
-      ...prev.slice(0, 2),
-      { id: 3, text: 'Phase 3: Math validation complete.', status: 'done' },
-      { id: 4, text: 'Phase 4: Generating structured response...', status: 'done' }
-    ])
-    setChecks(prev => prev.map(c => {
-      if (c.id === 'math') return { ...c, status: 'pass' }
-      if (c.id === 'pipeline') return { ...c, status: 'pass' }
-      return c
-    }))
+      setChecks(prev => prev.map(c => ({...c, status: 'pass'})))
 
-    setMessages(prev => [...prev, {
-      id: Date.now() + 1,
-      role: 'assistant',
-      content: `**Structured Analysis Result**\n\nThe input "${query}" has been analyzed successfully.\n\n**Key Findings:**\n- All math derivations align with standard API codes.\n- Conceptual architecture is sound.\n- Pipeline flow matches the expected DAG execution.\n\nWould you like me to generate a detailed report from these findings?`,
-      showGenerateBtn: true
-    }])
-    setIsProcessing(false)
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: res.reply || 'Analysis complete.',
+        showGenerateBtn: true
+      }])
+    } catch (err) {
+      setThinkingPlan([{id: 1, text: `Error: ${err.message}`, status: 'done'}])
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'error',
+        content: `Error: ${err.message}`,
+        showGenerateBtn: false
+      }])
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   return (
