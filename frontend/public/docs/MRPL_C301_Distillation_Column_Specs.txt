@@ -1,0 +1,23 @@
+---
+Classification: INTERNAL USE ONLY
+Document ID: MRPL-C301-SPEC-09
+Date: 2026-08-15
+---
+
+# Technical Specifications for Distillation Column C-301
+
+## 1. Operating Parameters
+- **Maximum Operating Pressure**: 12.0 MPa
+- **Normal Operating Pressure**: 11.5 MPa
+- **Maximum Temperature**: 360°C
+- **Feed Rate**: 12,500 BPSD
+
+## 2. Structural Details
+- **Material of Construction**: Carbon Steel ASTM A106 Gr B
+- **Main Pipe Size**: 500mm (Schedule 80)
+- **Control Valves**: Primary flow control via CV-204
+- **Sensors**: Pressure Transmitter PT-301 located at top manifold.
+
+## 3. Maintenance Guidelines
+- Ensure secondary containment is active when modifying heat exchanger E-102.
+- NDT (Non-Destructive Testing) is required for CV-204 every 6 months to detect flow variance.

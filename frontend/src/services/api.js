@@ -49,12 +49,31 @@ class ApiClient {
   }
 
   // ─── Unified Agent Chat (Supervisor routes to the right agent) ───
-  async sendMessage(message, uploadedFiles = []) {
+  async sendMessage(message, uploadedFiles = [], sessionId = 'default') {
     if (USE_MOCKS) return mockResponses.supervisorMessage(message, uploadedFiles)
     return this._fetch('/api/v1/agents/supervisor/message', {
       method: 'POST',
-      body: JSON.stringify({ message, uploaded_files: uploadedFiles }),
+      body: JSON.stringify({ message, uploaded_files: uploadedFiles, session_id: sessionId }),
     })
+  }
+
+  // ─── Multi-Document Upload for Analyzer Agent ───
+  async uploadDocuments(files, sessionId = 'analyzer') {
+    const formData = new FormData()
+    files.forEach(f => formData.append('files', f))
+    formData.append('session_id', sessionId)
+    const token = localStorage.getItem('token')
+    const headers = token ? { Authorization: `Bearer ${token}` } : {}
+    const res = await fetch(`${this.baseUrl}/api/v1/agents/upload-documents`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Document upload failed' }))
+      throw new Error(err.message || err.detail || `HTTP ${res.status}`)
+    }
+    return res.json()
   }
 
   // ─── Knowledge Agent (direct, if needed) ───

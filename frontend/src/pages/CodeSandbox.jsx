@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Play, Box, FileCode, CheckCircle2, TerminalSquare, AlertTriangle } from 'lucide-react'
+import { Send, Play, Box, FileCode, CheckCircle2, TerminalSquare, AlertTriangle, Copy } from 'lucide-react'
 import ClientSidebar from '../components/layout/ClientSidebar'
 import { apiClient } from '../services/api'
 
@@ -58,10 +58,11 @@ export default function CodeSandbox() {
     
     try {
       const res = await apiClient.executeCode(code)
+      const enginePrefix = res.engine ? `[${res.engine}]\n` : ''
       if (res.success) {
-        setOutput(`Execution completed successfully.\n---\n${res.stdout}`)
+        setOutput(`${enginePrefix}Execution completed successfully.\n---\n${res.stdout}`)
       } else {
-        setOutput(`Execution failed (Exit Code ${res.exit_code}).\n---\n${res.stderr || res.stdout}`)
+        setOutput(`${enginePrefix}Execution failed (Exit Code ${res.exit_code}).\n---\n${res.stderr || res.stdout}`)
       }
     } catch (err) {
       setOutput(`Error connecting to sandbox: ${err.message}`)
@@ -115,9 +116,33 @@ export default function CodeSandbox() {
               {messages.map(msg => (
                 <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                   {msg.role === 'assistant' && (
-                    <div className="bg-surface-200/50 text-slate-300 px-4 py-3 rounded-lg border border-surface-300 text-sm whitespace-pre-wrap w-[90%]">
-                      <div className="text-[10px] font-bold text-teal-400 mb-1 uppercase tracking-wider">AI</div>
-                      {msg.content}
+                    <div className="bg-surface-200/50 text-slate-300 px-4 py-3 rounded-lg border border-surface-300 text-sm w-[90%]">
+                      <div className="text-[10px] font-bold text-teal-400 mb-2 uppercase tracking-wider">AI</div>
+                      
+                      {/* Render content splitting by code blocks */}
+                      {msg.content.split(/(```[\s\S]*?```)/g).map((part, index) => {
+                        if (part.startsWith('```') && part.endsWith('```')) {
+                          const codeContent = part.replace(/```[a-z]*\n?/i, '').replace(/```$/, '');
+                          return (
+                            <div key={index} className="relative group my-2 bg-[#1e1e1e] rounded-md border border-surface-300 overflow-hidden">
+                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => navigator.clipboard.writeText(codeContent.trim())}
+                                  className="p-1 bg-surface-200 hover:bg-surface-300 rounded text-slate-400 hover:text-white"
+                                  title="Copy code"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <pre className="p-3 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap">
+                                {codeContent.trim()}
+                              </pre>
+                            </div>
+                          )
+                        }
+                        return <div key={index} className="whitespace-pre-wrap">{part}</div>
+                      })}
+                      
                     </div>
                   )}
                   {msg.role === 'user' && (

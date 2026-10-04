@@ -3,7 +3,8 @@ import { useContext, useState } from 'react'
 import { AuthContext } from '../../App'
 import {
   Menu, History, Settings, Library, Search, LogOut, ChevronDown,
-  Brain, FileSearch, Code2, FileOutput, FileText, Download
+  Brain, FileSearch, Code2, FileOutput, FileText, Download,
+  ShieldCheck, Network
 } from 'lucide-react'
 
 const AGENTS = [
@@ -18,6 +19,7 @@ export default function ClientSidebar() {
   const location = useLocation()
   const { user, logout } = useContext(AuthContext)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showProofModal, setShowProofModal] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -117,14 +119,32 @@ export default function ClientSidebar() {
         {/* MANAGE Section */}
         <div className="mt-auto pt-4">
           <div className="space-y-1">
+            {/* Added Architecture Proof Button */}
+            <button onClick={() => setShowProofModal(true)} className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-full transition-colors text-sm">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" /> System Architecture Proof
+            </button>
+            
             {user?.role === 'admin' && (
               <button onClick={() => navigate('/admin')} className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-full transition-colors text-sm">
                 <Settings className="w-4 h-4" /> Admin Dashboard
               </button>
             )}
-            <button className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-full transition-colors text-sm">
-              <Library className="w-4 h-4" /> MRPL SOP Docs
-            </button>
+            
+            <div className="group rounded-2xl transition-all duration-300 hover:bg-surface-200/30">
+              <button className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 group-hover:text-slate-200 rounded-full transition-colors text-sm">
+                <Library className="w-4 h-4" /> MRPL SOP Docs
+              </button>
+              <div className="h-0 overflow-hidden group-hover:h-[90px] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 pl-4 pr-3">
+                <div className="py-1 space-y-1 border-l border-surface-300/50 ml-3 pl-4 mb-2">
+                  <a href="/docs/MRPL_C301_Distillation_Column_Specs.txt" download="MRPL_C301_Specs.txt" className="w-full flex text-left py-1 text-xs text-slate-400 hover:text-slate-200 truncate">
+                    📄 C301_Column_Specs.txt
+                  </a>
+                  <a href="/docs/MRPL_Maintenance_Log_August.txt" download="MRPL_Maintenance_Log.txt" className="w-full flex text-left py-1 text-xs text-slate-400 hover:text-slate-200 truncate">
+                    📄 Maintenance_Log_Aug.txt
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -156,6 +176,81 @@ export default function ClientSidebar() {
           </>
         )}
       </div>
+
+      {/* Proof Modal */}
+      {showProofModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#1e1e1e] border border-surface-300 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+            <div className="flex justify-between items-center p-5 border-b border-surface-300 bg-surface-200/50">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                <h2 className="text-lg font-semibold text-white">System Architecture & Security Proof</h2>
+              </div>
+              <button onClick={() => setShowProofModal(false)} className="text-slate-400 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 text-sm text-slate-300 space-y-6">
+              
+              <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-5">
+                <h3 className="text-emerald-400 font-semibold text-base mb-3 flex items-center gap-2"><Network className="w-5 h-5"/> 100% On-Premise Execution</h3>
+                <p className="mb-4">This system makes <strong>ZERO</strong> external API calls. All data, inference, and analysis occurs strictly within the local MRPL environment.</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
+                    <div className="text-xs text-slate-500 mb-1">Frontend Gateway</div>
+                    <div className="font-mono text-emerald-300">http://localhost:3000</div>
+                  </div>
+                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
+                    <div className="text-xs text-slate-500 mb-1">FastAPI Backend</div>
+                    <div className="font-mono text-emerald-300">http://localhost:8000</div>
+                  </div>
+                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
+                    <div className="text-xs text-slate-500 mb-1">Ollama Engine (Inference)</div>
+                    <div className="font-mono text-emerald-300">http://localhost:11434</div>
+                  </div>
+                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
+                    <div className="text-xs text-slate-500 mb-1">Vector DB</div>
+                    <div className="font-mono text-emerald-300">ChromaDB (Local File)</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-5">
+                <h3 className="text-indigo-400 font-semibold text-base mb-3 flex items-center gap-2"><Network className="w-5 h-5"/> LangGraph & LangChain Architecture</h3>
+                <p className="mb-4">The backend routing utilizes LangGraph's StateGraph paradigm to orchestrate a multi-agent workflow.</p>
+                <div className="bg-[#131314] rounded-lg p-4 border border-surface-300 font-mono text-xs overflow-x-auto text-indigo-200">
+                  <pre>
+{`{
+  "framework": "LangChain + LangGraph",
+  "architecture": {
+    "type": "StateGraph Multi-Agent System",
+    "supervisor_node": "Intent classification → routes to specialized agent nodes",
+    "agent_nodes": [
+      {"name": "Conversational", "model": "qwen2.5:3b"},
+      {"name": "Knowledge (RAG)", "model": "qwen2.5:3b", "vector_db": "ChromaDB"},
+      {"name": "Math", "model": "qwen2.5:3b"},
+      {"name": "Code", "model": "qwen2.5:3b"},
+      {"name": "Generation", "model": "qwen2.5:3b", "engines": ["fpdf2", "python-pptx", "openpyxl"]},
+      {"name": "Vision", "model": "qwen2.5:3b"}
+    ]
+  }
+}`}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-5">
+                <h3 className="text-blue-400 font-semibold text-base mb-3 flex items-center gap-2"><ShieldCheck className="w-5 h-5"/> How to Verify Offline Capability</h3>
+                <ol className="list-decimal pl-5 space-y-2 mb-4">
+                  <li><strong>Turn off Wi-Fi (Airplane Mode)</strong>: Disconnect from the internet completely. Ask the Generator Agent to create a document. It will successfully generate and download offline.</li>
+                  <li><strong>Check Browser Network Tab (F12)</strong>: Open Developer Tools (F12), go to Network, and send a message. You will see 0 requests going to external domains (like api.openai.com). All traffic routes strictly to <code>localhost</code>.</li>
+                  <li><strong>Verify via Task Manager</strong>: Open Windows Task Manager. You will observe the <code>ollama</code> process utilizing local CPU/GPU/RAM to perform inference directly on the machine.</li>
+                </ol>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
