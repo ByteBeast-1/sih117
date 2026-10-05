@@ -69,13 +69,10 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] flex flex-col justify-between items-center py-10 px-4 select-none font-sans relative overflow-x-hidden">
       
-      {/* Subtle Top Ambient Banner */}
+      {/* Subtle Top Ambient Header */}
       <header className="w-full max-w-4xl flex items-center justify-between py-2 px-4 text-xs text-[#8b949e]">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-slate-300 font-medium">MRPL On-Premise Gateway</span>
-          <span className="text-slate-500 hidden sm:inline">|</span>
-          <span className="text-emerald-400 font-mono text-[11px] hidden sm:inline">AIR-GAP HOST ACTIVE</span>
+        <div className="flex items-center gap-2 text-slate-300 font-semibold tracking-tight text-sm">
+          <span>MRPL Sovereign</span>
         </div>
         <div className="flex items-center gap-4 text-slate-300">
           <button 
@@ -157,10 +154,10 @@ export default function Login() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setActiveModal('airgap')}
+                  onClick={() => setActiveModal('docs')}
                   className="text-xs text-[#58a6ff] hover:underline cursor-pointer"
                 >
-                  Local Auth Specs
+                  Quickstart Guide
                 </button>
               </div>
               <div className="relative flex items-center">
@@ -295,13 +292,13 @@ export default function Login() {
             className="hover:text-white hover:underline cursor-pointer flex items-center gap-1.5"
           >
             <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Air-Gap Guarantees</span>
+            <span>Security & Compliance</span>
           </button>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Smart India Hackathon 2024 · Problem Statement SIH117 · Air-Gapped Sovereign AI</span>
+          <span>Smart India Hackathon 2024 · Problem Statement SIH117 · On-Premise AI</span>
         </div>
       </footer>
 
