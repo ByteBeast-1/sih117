@@ -26,13 +26,14 @@ The platform orchestrates a **LangGraph multi-agent fabric** powered by local La
 
 1. [Problem Statement & Background](#-problem-statement--background)
 2. [Sovereign Architecture](#-sovereign-architecture)
-3. [Multi-Phase Project Organization](#-multi-phase-project-organization)
-4. [Agent Capabilities & Workflows](#-agent-capabilities--workflows)
-5. [Docker Bundle & Air-Gap Deployment](#-docker-bundle--air-gap-deployment)
-6. [Quick Start & Local Setup](#-quick-start--local-setup)
-7. [Air-Gap Verification for Evaluators](#-air-gap-verification-for-evaluators)
-8. [Non-Negotiable Engineering Standards](#-non-negotiable-engineering-standards)
-9. [Primary Repositories & Team](#-primary-repositories--team)
+3. [Project Directory & File Structure](#-project-directory--file-structure)
+4. [Multi-Phase Project Organization](#-multi-phase-project-organization)
+5. [Agent Capabilities & Workflows](#-agent-capabilities--workflows)
+6. [Docker Bundles & Air-Gap Deployment](#-docker-bundles--air-gap-deployment)
+7. [Quick Start & Local Setup](#-quick-start--local-setup)
+8. [Air-Gap Verification for Evaluators](#-air-gap-verification-for-evaluators)
+9. [Sovereign Engineering Principles](#-sovereign-engineering-principles)
+10. [Primary Repositories & Team](#-primary-repositories--team)
 
 ---
 
@@ -90,6 +91,101 @@ A 100% on-premise, turnkey software appliance running on local workstation or GP
 │  matplotlib, sympy            │ │                                      │
 └───────────────────────────────┘ └──────────────────────────────────────┘
                   ⛔ ZERO EXTERNAL NETWORK CALLS ⛔
+```
+
+---
+
+## 📂 Project Directory & File Structure
+
+The codebase is organized as a production-grade, modular monorepo cleanly separating frontend, backend, orchestration, and phase milestone artifacts:
+
+```text
+SIH26-Sovereign-Workbench/
+├── backend/                                # FastAPI On-Premise Application & Local AI Core
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── auth.py                         # JWT token generation, password hashing & verification
+│   │   ├── database.py                     # SQLite asynchronous connection & metadata
+│   │   ├── knowledge_base.py               # ChromaDB vector store, chunking & PyMuPDF extraction
+│   │   ├── main.py                         # FastAPI application entrypoint & middleware
+│   │   ├── models.py                       # SQLAlchemy database models (Users, Chats, Artifacts)
+│   │   ├── ollama_client.py                # Local Ollama REST client with streaming & timeouts
+│   │   ├── schemas.py                      # Pydantic validation schemas for API payloads
+│   │   └── routers/
+│   │       ├── __init__.py
+│   │       ├── admin.py                    # Admin diagnostics, model registry & audit trails
+│   │       ├── agents.py                   # Multi-agent orchestrator, RAG, sandbox & generators
+│   │       └── auth.py                     # Login & user verification routes
+│   ├── Dockerfile                          # Multi-stage Python 3.11 backend container
+│   └── requirements.txt                    # FastAPI, LangGraph, ChromaDB, PyMuPDF, ReportLab
+│
+├── frontend/                               # React 19 + Vite Enterprise UI
+│   ├── public/
+│   │   ├── docs/                           # Sample industrial engineering documents
+│   │   ├── favicon.svg                     # Sovereign monogram favicon
+│   │   └── icons.svg                       # SVG iconography asset sheet
+│   ├── src/
+│   │   ├── assets/                         # Static UI graphics
+│   │   ├── components/
+│   │   │   ├── admin/                      # Admin diagnostics, models, audit logs & docs viewer
+│   │   │   ├── chat/                       # Chat panel, agent routing badges & thinking traces
+│   │   │   ├── layout/                     # Client sidebar, top bar & persistent status bar
+│   │   │   └── workspace/                  # Document analyzer, report generator, sandbox terminal
+│   │   ├── mocks/                          # Standalone fallback mocks for offline development
+│   │   ├── pages/
+│   │   │   ├── AdminDashboard.jsx          # Admin overview & system health
+│   │   │   ├── AnalyzerAgent.jsx           # Technical document audit & entity extraction
+│   │   │   ├── ArtifactsPage.jsx           # Database of generated deliverables with downloads
+│   │   │   ├── BlueprintAgent.jsx          # P&ID & engineering diagram inspection
+│   │   │   ├── ClientWorkbench.jsx         # Primary dual-pane engineer chat & streaming trace
+│   │   │   ├── CodeSandbox.jsx             # Docker container terminal with pre-installed science suite
+│   │   │   ├── GenerationAgent.jsx         # Live document generator (PDF, PPTX, Excel, LaTeX)
+│   │   │   ├── KnowledgeAgent.jsx          # Semantic search & ChromaDB document query
+│   │   │   ├── Login.jsx                   # Minimalist GitHub/Obsidian authentication portal
+│   │   │   └── MathAgent.jsx               # Thermodynamic & engineering calculation sandbox
+│   │   ├── services/
+│   │   │   └── api.js                      # Centralized API client & HTTP interceptors
+│   │   ├── App.jsx                         # React routing & AuthContext provider
+│   │   ├── index.css                       # Global Tailwind CSS and scrollbar styling
+│   │   └── main.jsx                        # React root bootstrap
+│   ├── Dockerfile                          # Multi-stage Node 20 build + Nginx Alpine serve
+│   ├── nginx.conf                          # Nginx production reverse proxy & SPA router
+│   ├── package.json                        # Node dependencies (Lucide, Tailwind, Recharts)
+│   └── vite.config.js                      # Vite build configuration (Port 3000)
+│
+├── phases/                                 # SIH Architecture & Phase Milestone Deliverables
+│   ├── 01-fullstack/                       # Phase 1: Client UI, RBAC, Admin Shell & Contracts
+│   │   ├── 01-setup-shell-auth/            # Sub-phase specification
+│   │   ├── 02-client-sidebar-agent-pages/  # Sub-phase specification
+│   │   ├── 03-supervisor-coding-workspace/ # Sub-phase specification
+│   │   ├── 04-admin-dashboard/             # Sub-phase specification
+│   │   ├── 05-integration-and-polish/      # Sub-phase specification
+│   │   └── CONTRACTS.md                    # Interface definitions & API contracts
+│   ├── 02-agents-ai/                       # Phase 2: LangGraph Fabric, Vector Store & Local LLMs
+│   │   ├── 01-model-serving-and-router/    # Sub-phase specification
+│   │   ├── 02-rag-knowledge-base/          # Sub-phase specification
+│   │   ├── 03-supervisor-agent/            # Sub-phase specification
+│   │   ├── 04-generation-agent/            # Sub-phase specification
+│   │   ├── 05-vision-blueprint-agent/      # Sub-phase specification
+│   │   ├── 06-math-calculation-agent/      # Sub-phase specification
+│   │   ├── CONTRACTS.md                    # Agent state machine contracts
+│   │   └── SIH26_Phase2_Delivery_Report.docx # Comprehensive delivery documentation
+│   └── 03-devops-infra/                    # Phase 3: Docker Sandboxing, Air-Gap Audit & CI/CD
+│       ├── 01-local-dev-environment/       # Sub-phase specification
+│       ├── 02-sandbox-execution-service/   # Sub-phase specification
+│       ├── 03-docker-compose-and-deployment/# Sub-phase specification
+│       ├── 04-network-proof-and-monitoring/# Sub-phase specification
+│       ├── 05-cicd-coderabbit-github-actions/# Sub-phase specification
+│       └── CONTRACTS.md                    # Infrastructure boundary contracts
+│
+├── docs/                                   # Supplemental Architecture & Deployment Guides
+│   └── DEPLOYMENT_GUIDE.md                 # Complete manual & Docker guide
+├── sample_documents/                       # Pre-loaded refinery SOPs, equipment specs & logs
+├── docker-compose.yml                      # Single-command stack coordinator
+├── sovereign_backend_bundle.tar            # Pre-exported offline backend image (3.30 GB)
+├── sovereign_frontend_bundle.tar           # Pre-exported offline frontend image (25.3 MB)
+├── sovereign_sandbox_airgap_bundle.tar     # Pre-exported offline sandbox image (167.5 MB)
+└── README.md                               # Project documentation & evaluation guide
 ```
 
 ---
