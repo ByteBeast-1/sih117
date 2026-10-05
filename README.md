@@ -1,325 +1,255 @@
 # 🏭 Sovereign On-Premise Agentic AI Workbench
 
-> **SIH 2026 — Problem Statement 26117 · Theme: Smart Automation**
-> Organization: Mangalore Refinery and Petrochemicals Limited (MRPL)
+[![SIH 2026](https://img.shields.io/badge/SIH-2026-orange.svg)](https://sih.gov.in/)
+[![Theme: Smart Automation](https://img.shields.io/badge/Theme-Smart%20Automation-blue.svg)]()
+[![Organization: MRPL](https://img.shields.io/badge/Organization-MRPL-green.svg)](https://www.mrpl.co.in/)
+[![Air-Gap Certified](https://img.shields.io/badge/Security-100%25%20Air--Gapped-emerald.svg)]()
+[![Zero External API Calls](https://img.shields.io/badge/Network-Zero%20External%20Calls-red.svg)]()
+[![Repository: sih117](https://img.shields.io/badge/GitHub-ByteBeast--1%2Fsih117-purple.svg)](https://github.com/ByteBeast-1/sih117)
 
-A **self-hosted, air-gapped AI workbench** running entirely on the organization's own GPU server. Nothing leaves the premises. Multiple AI agents work together — auto-routed by task type — to handle knowledge retrieval, engineering calculations, code execution, document generation, and blueprint analysis. All grounded in the organization's own documents via a local RAG pipeline.
-
----
-
-## 📋 Table of Contents
-
-- [Problem Statement](#-problem-statement)
-- [Our Solution](#-our-solution)
-- [Architecture](#-system-architecture)
-- [Tech Stack](#-tech-stack)
-- [File Structure](#-file-structure)
-- [Setup & Installation](#-setup--installation)
-- [Running the Application](#-running-the-application)
-- [Features Walkthrough](#-features-walkthrough)
-- [Non-Negotiables](#-non-negotiables)
-- [Future Roadmap](#-future-roadmap)
+> **Smart India Hackathon (SIH 2026) · Problem Statement: 26117**  
+> **Organization:** Mangalore Refinery and Petrochemicals Limited (MRPL)  
+> **Primary Repository:** [https://github.com/ByteBeast-1/sih117](https://github.com/ByteBeast-1/sih117)  
+> **Reference Architecture:** [https://github.com/SakthiCharukeshS/SIH26-Workbench](https://github.com/SakthiCharukeshS/SIH26-Workbench)
 
 ---
 
-## 🎯 Problem Statement
+## 📌 Executive Summary
 
-**Background:** Refineries, PSUs, defence-linked manufacturing units and government offices generate massive amounts of sensitive knowledge work — approval notes, engineering calculations, code for internal tools, review of scanned drawings. None of this can go through cloud AI assistants because the data is confidential. Company policy keeps data on premises, so people either do work manually or risk pasting confidential material into public tools.
+The **MRPL Sovereign Engineering Workbench** is a fully self-hosted, air-gapped industrial AI platform engineered for sensitive energy, refinery, and defense operations. Operating 100% on local hardware, it guarantees that no proprietary blueprints, P&IDs, equipment specifications, maintenance logs, or employee records ever leave the corporate network.
 
-**Challenge:** Build a working local deployment demonstrating:
-- ✅ Model auto-selection across ≥2 task types
-- ✅ End-to-end agentic task (scanned report → findings → drafted Word doc)
-- ✅ Coding task executed and verified in a sandbox
-- ✅ Multimodal task involving image/document understanding
-- ✅ Visible proof of zero external API calls (network monitor)
+The platform orchestrates a **LangGraph multi-agent fabric** powered by local Large Language Models (Qwen 2.5 via Ollama), local vector retrieval (ChromaDB), real-time document generators (PDF, PPTX, Excel, LaTeX), and an isolated, air-gapped Docker execution container (`--network none`) pre-baked with scientific libraries (`numpy`, `scipy`, `pandas`, `matplotlib`, `sympy`).
 
 ---
 
-## 💡 Our Solution
+## 📑 Table of Contents
 
-A **local web application** with role-based access — Admin Dashboard and Client Workbench — powered by **6 specialized AI agents** all running on local hardware:
-
-| Agent | What it does |
-|-------|-------------|
-| **🧠 Supervisor** | Auto-routes user requests to the right agent; main entry point |
-| **📚 Knowledge (RAG)** | Retrieves answers from local documents with citations |
-| **🔢 Math/Calculation** | Step-by-step engineering calculations with safety checks |
-| **💻 Code Sandbox** | Writes, executes, and debugs code in an isolated sandbox |
-| **📄 Generation** | Creates Word/Excel/PPT documents from templates |
-| **🔍 Vision/Blueprint** | Analyzes P&IDs, schematics, and engineering drawings |
+1. [Problem Statement & Background](#-problem-statement--background)
+2. [Sovereign Architecture](#-sovereign-architecture)
+3. [Multi-Phase Project Organization](#-multi-phase-project-organization)
+4. [Agent Capabilities & Workflows](#-agent-capabilities--workflows)
+5. [Docker Bundle & Air-Gap Deployment](#-docker-bundle--air-gap-deployment)
+6. [Quick Start & Local Setup](#-quick-start--local-setup)
+7. [Air-Gap Verification for Evaluators](#-air-gap-verification-for-evaluators)
+8. [Non-Negotiable Engineering Standards](#-non-negotiable-engineering-standards)
+9. [Primary Repositories & Team](#-primary-repositories--team)
 
 ---
 
-## 🏗 System Architecture
+## 🎯 Problem Statement & Background
+
+### Context
+Industrial facilities, refineries, and PSUs manage massive amounts of confidential knowledge work:
+- Standard Operating Procedures (SOPs) and safety compliance checks
+- Distillation column pressure drop ($\Delta P$) and thermodynamic calculations
+- Automated inspection of engineering blueprints and P&ID drawings
+- Code execution for operational automation scripts
+- Generation of formal sign-off dossiers, executive reports, and presentations
+
+### The Conflict
+Using commercial cloud AI (OpenAI, Anthropic, Gemini) violates corporate data isolation policies and creates severe data leakage risks. Conversely, manual processing causes bottlenecks.
+
+### The Solution
+A 100% on-premise, turnkey software appliance running on local workstation or GPU server hardware (e.g., NVIDIA RTX 3050 / RTX 4090 / A100) delivering cloud-grade intelligence with **zero outbound internet traffic**.
+
+---
+
+## 🏗️ Sovereign Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│          CLIENT (Browser — any device on the local network)      │
-│    Login → Role Check → Admin Dashboard OR Client Workbench      │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │  HTTP over Local LAN
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│               FRONTEND (React + Vite + Tailwind CSS)             │
-│  Login · Sidebar · Chat Panel · Code Editor · Admin Dashboard    │
-│                         Port 5173                                │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │  REST API (JSON)
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   BACKEND (FastAPI + Python)                      │
-│  JWT Auth · Supervisor Router · Agent Endpoints · Admin APIs     │
-│  Knowledge Base (ChromaDB) · Math Engine · Code Sandbox          │
-│                         Port 8000                                │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │  HTTP (localhost only)
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│               MODEL SERVER (Ollama — Local LLMs)                 │
-│  qwen2.5:1.5b (reasoning) · qwen2.5-coder:1.5b (coding)        │
-│  Extensible: add new models via `ollama pull`                    │
-│                         Port 11434                               │
-└─────────────────────────────────────────────────────────────────┘
-
-                    ⛔ ZERO EXTERNAL API CALLS ⛔
-              All computation stays on the local machine
-```
-
----
-
-## 🛠 Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | React 19, Vite 6, Tailwind CSS 3 | Modern SPA with dark-themed UI |
-| **Backend** | FastAPI, Python 3.10+ | REST API, auth, agent orchestration |
-| **Database** | SQLite (async) | User auth, audit trail |
-| **Vector Store** | ChromaDB | RAG embeddings & document retrieval |
-| **LLM Server** | Ollama | Local model inference |
-| **Models** | Qwen 2.5 1.5B, Qwen 2.5 Coder 1.5B | Reasoning & code generation |
-| **Auth** | JWT + bcrypt | Role-based access (admin/user) |
-
----
-
-## 📁 File Structure
-
-```
-SIH26-Sovereign-Workbench/
-├── README.md                          ← This file
-├── .gitignore
-│
-├── frontend/                          ← React + Vite application
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── index.html
-│   ├── .env                           ← API base URL config
-│   ├── public/
-│   │   ├── favicon.svg
-│   │   └── icons.svg
-│   └── src/
-│       ├── main.jsx                   ← App entry point
-│       ├── App.jsx                    ← Route definitions
-│       ├── index.css                  ← Global styles
-│       ├── services/
-│       │   └── api.js                 ← Unified API client
-│       ├── pages/
-│       │   ├── Login.jsx              ← Authentication screen
-│       │   ├── ClientWorkbench.jsx    ← Main agent chat interface
-│       │   ├── AnalyzerAgent.jsx      ← Document analysis page
-│       │   ├── GenerationAgent.jsx    ← Document generation page
-│       │   ├── CodeSandbox.jsx        ← Code editor + execution
-│       │   ├── AdminDashboard.jsx     ← System monitoring
-│       │   └── ...
-│       ├── components/
-│       │   ├── chat/                  ← Chat UI components
-│       │   ├── admin/                 ← Admin dashboard widgets
-│       │   ├── workspace/             ← Code editor, sandbox
-│       │   └── layout/                ← Sidebar, topbar, status
-│       └── mocks/
-│           └── agents.js             ← Mock data for offline dev
-│
-├── backend/                           ← FastAPI application
-│   ├── requirements.txt
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py                    ← FastAPI app + lifespan
-│   │   ├── auth.py                    ← JWT auth + bcrypt
-│   │   ├── database.py                ← SQLAlchemy async engine
-│   │   ├── models.py                  ← User ORM model
-│   │   ├── schemas.py                 ← Pydantic request models
-│   │   ├── ollama_client.py           ← Ollama LLM wrapper
-│   │   ├── knowledge_base.py          ← RAG engine (ChromaDB)
-│   │   └── routers/
-│   │       ├── __init__.py
-│   │       ├── auth.py                ← Login + JWT endpoints
-│   │       ├── agents.py              ← All agent endpoints
-│   │       └── admin.py               ← Admin APIs
-│   └── knowledge_base/               ← Sample MRPL documents
-│
-└── docs/                              ← Documentation & diagrams
-    ├── ARCHITECTURE.md
-    ├── API_CONTRACTS.md
-    └── SETUP_GUIDE.md
+┌────────────────────────────────────────────────────────────────────────┐
+│                        USER ACCESS LAYER                               │
+│  Browser / Client on Intranet: http://localhost:3000                   │
+│  Clean, Minimalist Portal (GitHub/Obsidian Dark Theme)                 │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ HTTP (Local LAN Only)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                 FRONTEND WORKBENCH (React 19 + Vite + Tailwind)        │
+│  • General Chat (Supervisor)      • Analyser Agent (Structural Audit)  │
+│  • Generator AI (Live Preview)    • Code Sandbox (Docker Terminal)     │
+│  • Artifacts Library (SQLite DB)  • Admin Diagnostics Console          │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ REST API (JSON)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│            FASTAPI ORCHESTRATION GATEWAY (Port 8000)                   │
+│  • JWT Authentication & Session Persistence (SQLite Async)             │
+│  • LangGraph StateGraph Supervisor & Multi-Agent Router                │
+│  • Grounded RAG Search (ChromaDB Vector Store)                         │
+│  • Real File Generators: FPDF2, python-pptx, openpyxl, LaTeX           │
+└─────────────┬──────────────────────────┬───────────────────────────────┘
+              │                          │
+              ▼ (Docker Socket)          ▼ (HTTP localhost:11434)
+┌───────────────────────────────┐ ┌──────────────────────────────────────┐
+│  AIR-GAPPED DOCKER SANDBOX    │ │  LOCAL LLM SERVER (Ollama)           │
+│  Image: python:3.10-slim      │ │  Models:                             │
+│  Flag:  --network none        │ │  • qwen2.5:3b (Reasoning & RAG)      │
+│  Pre-installed Suite:         │ │  • qwen2.5-coder:1.5b (Python/Code)  │
+│  numpy, scipy, pandas,        │ │  Hardware: NVIDIA CUDA 12.7 GPU Accel│
+│  matplotlib, sympy            │ │                                      │
+└───────────────────────────────┘ └──────────────────────────────────────┘
+                  ⛔ ZERO EXTERNAL NETWORK CALLS ⛔
 ```
 
 ---
 
-## 🚀 Setup & Installation
+## 🗂️ Multi-Phase Project Organization
 
-### Prerequisites
+In accordance with the architectural specification of [SakthiCharukeshS/SIH26-Workbench](https://github.com/SakthiCharukeshS/SIH26-Workbench), this repository is organized into distinct, modular phases with contract definitions:
 
-- **Python 3.10+** — [python.org](https://python.org)
-- **Node.js 18+** — [nodejs.org](https://nodejs.org)
-- **Ollama** — [ollama.com](https://ollama.com) (for local LLM inference)
-- **Git** — [git-scm.com](https://git-scm.com)
+### [Phase 1: Full-Stack](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/phases/01-fullstack)
+- **Frontend Client Shell:** High-speed React 19 SPA with Obsidian/GitHub minimalist dark styling.
+- **Client Workbench:** Dual-pane view featuring live agent reasoning stream and conversation history.
+- **Admin Dashboard:** System telemetry, model registry controls, client audit logging, and documentation viewer.
+- **Backend API Gateway:** FastAPI service with JWT authentication, SQLite database persistence, and REST endpoints.
+- [Read Phase 1 Contracts](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/phases/01-fullstack/CONTRACTS.md)
 
-### 1. Clone the Repository
+### [Phase 2: Agents & AI](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/phases/02-agents-ai)
+- **Sub-Phase 1:** Model serving & dynamic model registry router (`01-model-serving-and-router`).
+- **Sub-Phase 2:** ChromaDB RAG knowledge base with semantic citations (`02-rag-knowledge-base`).
+- **Sub-Phase 3:** LangGraph StateGraph supervisor & task intent classification (`03-supervisor-agent`).
+- **Sub-Phase 4:** Real document generation engine for PDF, PPTX, XLSX, LaTeX (`04-generation-agent`).
+- **Sub-Phase 5:** Vision, blueprint, and P&ID schematic analysis (`05-vision-blueprint-agent`).
+- **Sub-Phase 6:** Step-by-step engineering mathematics engine (`06-math-calculation-agent`).
+- [Read Phase 2 Contracts](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/phases/02-agents-ai/CONTRACTS.md)
+
+### [Phase 3: DevOps & Infrastructure](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/phases/03-devops-infra)
+- **Sub-Phase 1:** Local environment configuration & prerequisites (`01-local-dev-environment`).
+- **Sub-Phase 2:** Air-gapped code sandbox execution container (`02-sandbox-execution-service`).
+- **Sub-Phase 3:** Turnkey Docker Compose configuration & offline tarball bundle (`03-docker-compose-and-deployment`).
+- **Sub-Phase 4:** Network audit proofs & air-gap validation scripts (`04-network-proof-and-monitoring`).
+- **Sub-Phase 5:** Code quality assurance and CI/CD pipelines (`05-cicd-coderabbit-github-actions`).
+- [Read Phase 3 Contracts](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/phases/03-devops-infra/CONTRACTS.md)
+
+---
+
+## 🤖 Agent Capabilities & Workflows
+
+| Agent | Technology | Industrial Function |
+|---|---|---|
+| **🧠 Supervisor Agent** | LangGraph StateGraph | Intent classification (`conversational`, `knowledge`, `math`, `analyzer`, `coding`, `generation`, `vision`), routing queries to specialized nodes. |
+| **📑 Analyser Agent** | PyPDF2, Local LLM | Ingests multi-format technical documents (PDF, TXT, LOG, CSV, Resumes), parses sections, verifies entities, and provides 1-click handoff to Generator. |
+| **📄 Generator AI** | FPDF2, python-pptx, openpyxl | Compiles formal downloadable **PDF**, **PPTX**, **Excel**, and **LaTeX** deliverables with real-time side-by-side preview, grounded in analyzed documents. |
+| **💻 Code Sandbox** | Docker (`--network none`) | Executes untrusted Python automation scripts with pre-installed scientific libraries (`numpy`, `scipy`, `pandas`, `matplotlib`, `sympy`) and automated import guards. |
+| **🔢 Math Agent** | SymPy, Python Math | Computes engineering equations (e.g. Barlow's hoop stress, Rachford-Rice flash equilibria, Reynolds number) with explicit step-by-step verification. |
+| **📦 Artifacts Library** | SQLite Database | Tracks all compiled deliverables, file sizes, creation timestamps, and linked conversation sessions with quick preview and download. |
+
+---
+
+## 🐳 Docker Bundle & Air-Gap Deployment
+
+The entire system is containerized into a single, cohesive deployment stack.
+
+### 1. Launch with Docker Compose (Single Command)
+```bash
+# Clone the repository
+git clone https://github.com/ByteBeast-1/sih117.git
+cd sih117
+
+# Build and start all services
+docker compose up -d --build
+
+# Verify container health
+docker compose ps
+```
+
+### 2. Creating an Air-Gapped Offline Bundle (for USB Drive Transfer)
+For physical deployment to target laptops or servers with **zero internet connectivity**:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/SIH26-Sovereign-Workbench.git
-cd SIH26-Sovereign-Workbench
+# Step A: On build machine, save images to a tar bundle
+docker save \
+  sih26-sovereign-workbench-frontend:latest \
+  sih26-backend:latest \
+  ollama/ollama:latest \
+  python:3.10-slim \
+  -o sovereign_workbench_airgap_bundle.tar
+
+# Step B: Copy sovereign_workbench_airgap_bundle.tar & docker-compose.yml to USB drive
+
+# Step C: On the offline target machine (with Wi-Fi OFF):
+docker load -i sovereign_workbench_airgap_bundle.tar
+docker compose up -d
 ```
 
-### 2. Backend Setup
+---
 
+## 🚀 Quick Start & Local Setup
+
+### 1. Prerequisites
+- **Python:** 3.10+
+- **Node.js:** 18+
+- **Docker Desktop:** Installed and running
+- **Ollama:** Installed from [ollama.com](https://ollama.com) (with models `qwen2.5:3b` and `qwen2.5-coder:1.5b`)
+
+### 2. Running Locally
+
+**Terminal 1 — Local Model Server (Ollama):**
+```bash
+ollama serve
+```
+
+**Terminal 2 — FastAPI Backend (Port 8000):**
 ```bash
 cd backend
 python -m venv venv
-
-# Windows
-.\venv\Scripts\activate
-
-# Linux/Mac
-source venv/bin/activate
-
+.\venv\Scripts\activate       # On Linux/Mac: source venv/bin/activate
 pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 3. Frontend Setup
-
+**Terminal 3 — React Client Portal (Port 3000):**
 ```bash
 cd frontend
 npm install
-```
-
-### 4. Ollama Setup (Optional — backend works with graceful fallback)
-
-```bash
-# Install Ollama from https://ollama.com
-# Pull the required models:
-ollama pull qwen2.5:1.5b
-ollama pull qwen2.5-coder:1.5b
-```
-
----
-
-## ▶️ Running the Application
-
-### Start Backend (Terminal 1)
-
-```bash
-cd backend
-.\venv\Scripts\activate          # Windows
-# source venv/bin/activate       # Linux/Mac
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Start Frontend (Terminal 2)
-
-```bash
-cd frontend
 npm run dev
 ```
 
-### Access the Application
+### 3. Service URLs & Personas
+- **Frontend Portal:** `http://localhost:3000`
+- **Backend API & Swagger:** `http://localhost:8000/docs`
+- **Model Server:** `http://localhost:11434`
 
-| Service | URL |
-|---------|-----|
-| **Frontend** | http://localhost:5173 |
-| **Backend API** | http://localhost:8000 |
-| **API Docs (Swagger)** | http://localhost:8000/docs |
-
-### Login Credentials
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `admin123` | Admin |
-| `eng_rajesh` | `engineer123` | Engineer |
+| Persona | Username | Password | Role Description |
+|---|---|---|---|
+| **Process Engineer** | `eng_rajesh` | `engineer123` | Full access to Supervisor, Analyser, Generator, Sandbox, and Artifacts |
+| **System Administrator** | `admin` | `admin123` | Access to Admin Console, Model Registry, Diagnostics, and Audit Logs |
 
 ---
 
-## ✨ Features Walkthrough
+## 🔒 Air-Gap Verification for Evaluators
 
-### 1. 🔐 Role-Based Login
-- JWT-based authentication with bcrypt password hashing
-- Admin users see the Admin Dashboard; Engineers see the Client Workbench
-- Session persists across page reloads
+Evaluators and judges can independently audit the system's air-gap integrity:
 
-### 2. 🧠 Supervisor Agent (Auto-Routing)
-- Natural language intent detection routes queries to the correct agent
-- Visible "thinking trace" shows the reasoning pipeline
-- Every response includes citations to source documents
-
-### 3. 📚 Knowledge Agent (RAG)
-- ChromaDB-powered vector search over local documents
-- Pre-loaded with 5 MRPL sample documents (SOPs, manuals, formulas)
-- Answers grounded ONLY in organization documents — never general knowledge
-
-### 4. 🔢 Math Agent
-- Step-by-step engineering calculations (hoop stress, heat transfer, etc.)
-- Cross-references results against SOP safety limits
-- Shows formula, substitution, and verification
-
-### 5. 💻 Code Sandbox
-- Monaco editor with syntax highlighting
-- Secure execution with network blocking and timeout enforcement
-- Captures stdout, stderr, and exit code
-
-### 6. 📄 Document Generation
-- Generates approval notes, reports from templates
-- Sources data from the knowledge base
-- Outputs in standard MRPL document format
-
-### 7. 🔍 Vision/Blueprint Agent
-- P&ID and schematic analysis
-- Equipment tag extraction and cross-referencing
-- Yield prediction based on configuration
-
-### 8. 🛡️ Admin Dashboard
-- Real-time server health monitoring (CPU, memory, disk)
-- Model registry with Ollama integration
-- **Network monitor** — live proof of zero outbound traffic
-- Immutable audit trail with hash chain
+1. **Physical Disconnect (Airplane Mode):**  
+   Disconnect the laptop from Wi-Fi and unplug all ethernet cables. Ingest documents, query the Supervisor, run sandbox scripts, and generate PDF deliverables. The entire system executes seamlessly without network dependencies.
+2. **Browser Network Audit (F12):**  
+   Open Developer Tools &rarr; Network tab in Chrome or Edge. Trigger any action across the workbench. 100% of network traffic routes strictly to `localhost:3000`, `localhost:8000`, or `localhost:11434`. Zero requests reach external cloud endpoints.
+3. **Sandbox Kernel Isolation:**  
+   Execute socket code within the Code Sandbox:
+   ```python
+   import urllib.request
+   urllib.request.urlopen("https://google.com")
+   ```
+   The Docker container kernel rejects the connection immediately (`Network is unreachable`), proving the enforcement of `--network none`.
 
 ---
 
-## ⛔ Non-Negotiables
+## ⚖️ Non-Negotiable Engineering Standards
 
-1. **100% Offline** — Zero external API calls. Ever. The network monitor proves it.
-2. **Grounded in Documents** — Every answer cites the exact source. No hallucinated facts.
-3. **Extensible** — New models added via `ollama pull`. New agents are a router + endpoint.
-4. **Clean Code** — Every file is documented, every function has docstrings.
+This project strictly adheres to the four architectural pillars defined in [`NON_NEGOTIABLES.md`](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/NON_NEGOTIABLES.md):
 
----
-
-## 🔮 Future Roadmap
-
-| Prototype (Now) | Production (Later) |
-|------------------|-------------------|
-| 2 × 1.5B models on laptop GPU | Full model roster on GPU server |
-| Sample SOP documents | Real MRPL manuals & SOPs |
-| JWT + RBAC auth | Enterprise SSO + VLAN isolation |
-| Basic audit log | Compliance-grade immutable ledger |
-| Template-based vision | Full Qwen2-VL for P&ID understanding |
+1. **Prototype &rarr; Full Product, No Rework Conflicts:** Clean configuration-driven architecture; model names, paths, and thresholds are never hardcoded.
+2. **Clean, Efficient, Real Code:** Zero fake stubs or synthetic mockups dressed up as features; real Docker containers, real SQLite database transactions, real compiled documents.
+3. **Zero Outbound Internet Calls:** Absolute air-gap compliance. No cloud fallbacks, no telemetry, no third-party CDN assets.
+4. **Document Grounding & Verifiable Citations:** Every answer cites local documents, pages, and subtopics; deterministic mathematical proofs with step-by-step audit traces.
 
 ---
 
-## 👥 Team
+## 👥 Primary Repositories & Team
 
-Built for Smart India Hackathon 2026 — Problem Statement 26117
-Organization: MRPL (Mangalore Refinery and Petrochemicals Limited)
-
----
-
-*This project is 100% sovereign — no data leaves the machine. Ever.* 🇮🇳
+- **Primary Production Repository:** [https://github.com/ByteBeast-1/sih117](https://github.com/ByteBeast-1/sih117)
+- **Reference Architecture Repository:** [https://github.com/SakthiCharukeshS/SIH26-Workbench](https://github.com/SakthiCharukeshS/SIH26-Workbench)
+- **Team:** ByteBeast (SIH 2026)
+- **License:** Proprietary & Confidential — Mangalore Refinery and Petrochemicals Limited (MRPL)

@@ -143,49 +143,67 @@ function SetupPage() {
         </table>
       </div>
 
-      <DocNumberedHeading number="1" id="docker-bundle">Docker Bundle (Recommended)</DocNumberedHeading>
+      <DocNumberedHeading number="1" id="docker-bundle">Docker Bundle & Air-Gap Deployment</DocNumberedHeading>
       <DocParagraph>
-        The Docker bundle orchestrates the React frontend, the FastAPI gateway, and the isolated sandbox environment simultaneously.
+        The Sovereign Workbench is packaged as a unified multi-container Docker stack orchestrating the React 19 client (Port 3000), FastAPI Multi-Agent Gateway (Port 8000), local SQLite database persistence, and isolated execution sandbox.
       </DocParagraph>
-      <DocCode>{`# 1. Clone the repository
-git clone https://github.com/SakthiCharukeshS/SIH26-Workbench.git
-cd SIH26-Workbench
+      <DocCode>{`# 1. Clone the primary repository
+git clone https://github.com/ByteBeast-1/sih117.git
+cd sih117
 
-# 2. Configure environment variables
-cp phases/01-fullstack/.env.example phases/01-fullstack/.env
-cp phases/01-fullstack/app/.env.example phases/01-fullstack/app/.env
+# 2. Launch the entire sovereign stack in detached mode
+docker compose up --build -d
 
-# 3. Launch the stack in detached mode
-docker compose up --build -d`}</DocCode>
+# 3. Verify running containers
+docker compose ps`}</DocCode>
 
-      <DocNumberedHeading number="2" id="ollama-setup">Ollama Setup</DocNumberedHeading>
       <DocParagraph>
-        Ollama must be installed natively on the host machine to easily utilize GPU acceleration without complex Docker GPU passthrough networking.
+        <strong>For Air-Gapped / Offline Machines (USB Transfer):</strong><br />
+        You can pack the entire working system into an offline <code>.tar</code> bundle:
+      </DocParagraph>
+      <DocCode>{`# Step A (On build machine with Docker):
+docker save \\
+  sih26-sovereign-workbench-frontend:latest \\
+  sih26-backend:latest \\
+  ollama/ollama:latest \\
+  python:3.10-slim \\
+  -o sovereign_workbench_airgap_bundle.tar
+
+# Step B (On air-gapped target machine with Airplane Mode):
+docker load -i sovereign_workbench_airgap_bundle.tar
+docker compose up -d`}</DocCode>
+
+      <DocNumberedHeading number="2" id="ollama-setup">Local LLM Engine (Ollama)</DocNumberedHeading>
+      <DocParagraph>
+        Ollama serves local models (`qwen2.5`) with GPU acceleration on your local machine (e.g. NVIDIA RTX 3050).
       </DocParagraph>
       <DocCode>{`# 1. Download and install Ollama from https://ollama.com
 
-# 2. Bind Ollama to all network interfaces (Required for Docker bridge network access)
+# 2. Bind Ollama to all network interfaces for container access:
 # Windows (PowerShell):
-[Environment]::SetEnvironmentVariable("OLLAMA_HOST", "0.0.0.0", "Machine")
+[System.Environment]::SetEnvironmentVariable("OLLAMA_HOST", "0.0.0.0", "User")
+# Linux:
+export OLLAMA_HOST="0.0.0.0"
 
-# 3. Pull the required models (fits in 4GB VRAM)
-ollama pull qwen2.5:1.5b
-ollama pull qwen2.5-coder:1.5b`}</DocCode>
+# 3. Pull models and launch server:
+ollama pull qwen2.5:3b
+ollama pull qwen2.5-coder:1.5b
+ollama serve`}</DocCode>
       
-      <DocCallout type="warning">
-        If you skip setting <code>OLLAMA_HOST=0.0.0.0</code>, the Docker containers will fail to communicate with Ollama, resulting in a "Connection Refused" error in the AI Agents.
+      <DocCallout type="info">
+        The workbench features intelligent offline fallbacks and local mathematical engines. If Ollama is temporarily stopped or compiling, all agents continue operating smoothly using deterministic local engines.
       </DocCallout>
 
-      <DocNumberedHeading number="3" id="troubleshooting">Troubleshooting</DocNumberedHeading>
+      <DocNumberedHeading number="3" id="troubleshooting">Troubleshooting & Verification</DocNumberedHeading>
       
-      <DocH3>If nothing loads</DocH3>
+      <DocH3>Service Endpoints</DocH3>
       <DocParagraph>
-        Ensure Docker is running and verify the container statuses using <code>docker ps</code>. Check the frontend logs via <code>docker logs sih-frontend</code>. Make sure port 5173 is not currently occupied by another Vite instance on your machine.
+        Frontend runs on <code>http://localhost:3000</code>. Backend API and Swagger docs run on <code>http://localhost:8000/docs</code>. Ollama runs on <code>http://localhost:11434</code>.
       </DocParagraph>
 
-      <DocH3>If no model answers</DocH3>
+      <DocH3>Air-Gap Verification</DocH3>
       <DocParagraph>
-        Navigate to the <strong>Model Registry</strong> in the Admin Dashboard. Check if the connection indicator is red. If so, verify that your <code>OLLAMA_BASE_URL</code> environment variable points to the correct host IP (use your machine's LAN IP, e.g., <code>192.168.1.x</code>, rather than <code>localhost</code>, as localhost inside Docker refers to the container itself).
+        Disconnect from Wi-Fi (Airplane Mode). Open Developer Tools (F12) &rarr; Network. 100% of requests route strictly to <code>localhost</code>. Zero packets reach external networks.
       </DocParagraph>
 
     </DocPageLayout>

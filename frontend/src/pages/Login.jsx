@@ -1,24 +1,31 @@
 import { useState, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../App'
-import { Shield, Eye, EyeOff, Zap, Lock } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react'
 import { apiClient } from '../services/api'
 
 /**
- * Login page — clean centered card with MRPL sovereign branding.
- * Authenticates via POST /api/v1/auth/login and redirects by role.
+ * Clean, minimal GitHub/Obsidian-inspired Sign In Page
+ * Dark, focused, distraction-free authentication for MRPL Sovereign Workbench
  */
 export default function Login() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('eng_rajesh')
+  const [password, setPassword] = useState('engineer123')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useContext(AuthContext)
   const navigate = useNavigate()
 
+  const handleQuickFill = (u, p) => {
+    setUsername(u)
+    setPassword(p)
+    setError('')
+  }
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
+    if (!username.trim() || !password.trim()) return
     setError('')
     setLoading(true)
 
@@ -27,132 +34,156 @@ export default function Login() {
       login(data.user, data.token)
       navigate(data.user.role === 'admin' ? '/admin' : '/')
     } catch (err) {
-      setError(err.message || 'Authentication failed. Check your credentials.')
+      setError(err.message || 'Incorrect username or password.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-surface-100 flex items-center justify-center p-4">
-      {/* Ambient background glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sovereign-600/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sovereign-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative w-full max-w-md animate-fade-in">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sovereign-600/20 border border-sovereign-500/30 mb-4">
-            <Shield className="w-8 h-8 text-sovereign-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-100">MRPL Sovereign Workbench</h1>
-          <p className="text-slate-400 mt-2 text-sm">
-            Air-gapped AI assistant · 100% on-premise · Zero external calls
-          </p>
+    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] flex flex-col justify-between items-center py-12 px-4 select-none font-sans">
+      
+      {/* Top Section: Minimal Logo & Header */}
+      <div className="w-full max-w-[340px] flex flex-col items-center mb-6">
+        
+        {/* Obsidian/GitHub-style Faceted Monogram */}
+        <div className="w-12 h-12 rounded-2xl bg-[#161b22] border border-[#30363d] flex items-center justify-center mb-5 shadow-sm">
+          <svg className="w-6 h-6 text-indigo-400" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.2l6.5 3.6-2.5 1.4-6.5-3.6 2.5-1.4zM5.5 8.6L11 11.7v6.6l-5.5-3.1V8.6zm13 8.6l-5.5 3.1v-6.6l5.5-3.1v6.6z" />
+          </svg>
         </div>
 
-        {/* Login Card */}
-        <div className="card-surface p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username */}
+        <h1 className="text-2xl font-light tracking-tight text-white">
+          Sign in to Sovereign
+        </h1>
+        <p className="text-xs text-[#8b949e] mt-1">
+          MRPL Engineering Operating System
+        </p>
+      </div>
+
+      {/* Main Box: GitHub/Obsidian Clean Card */}
+      <div className="w-full max-w-[340px] flex flex-col gap-4">
+        
+        {/* Error Callout */}
+        {error && (
+          <div className="p-3 bg-[#f85149]/15 border border-[#f85149]/40 rounded-md text-xs text-[#f85149] flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="bg-[#161b22] border border-[#30363d] rounded-md p-5 shadow-md">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* Username / Employee ID */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-2">
-                Employee ID / Username
+              <label htmlFor="login_field" className="block text-sm font-normal text-slate-200 mb-1.5">
+                Username or employee ID
               </label>
               <input
-                id="username"
+                id="login_field"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. eng_123"
-                className="input-field w-full"
+                autoComplete="username"
                 required
-                autoFocus
+                className="w-full bg-[#0d1117] border border-[#30363d] rounded-md px-3 py-1.5 text-sm text-white placeholder-[#8b949e] focus:outline-none focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff] transition-all"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                Password
-              </label>
-              <div className="relative">
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password_field" className="block text-sm font-normal text-slate-200">
+                  Password
+                </label>
+                <span className="text-xs text-[#58a6ff] hover:underline cursor-pointer">
+                  Air-gapped local auth
+                </span>
+              </div>
+              <div className="relative flex items-center">
                 <input
-                  id="password"
+                  id="password_field"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="input-field w-full pr-12"
+                  autoComplete="current-password"
                   required
+                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-md px-3 pr-10 py-1.5 text-sm text-white placeholder-[#8b949e] focus:outline-none focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff] transition-all font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-2.5 text-[#8b949e] hover:text-white transition-colors p-1"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
-            {/* Error message */}
-            {error && (
-              <div className="flex items-center gap-2 text-danger text-sm bg-danger/10 border border-danger/20 rounded-lg px-4 py-3 animate-fade-in">
-                <Lock className="w-4 h-4 shrink-0" />
-                {error}
-              </div>
-            )}
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading || !username || !password}
-              className="btn-primary w-full flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  Sign In
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Demo credentials hint */}
-          <div className="mt-6 pt-5 border-t border-surface-300/50">
-            <p className="text-xs text-slate-500 text-center mb-3">Demo Credentials</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* Submit Button */}
+            <div className="pt-1">
               <button
-                type="button"
-                onClick={() => { setUsername('admin'); setPassword('admin123') }}
-                className="btn-ghost text-center py-2 border border-surface-300/30 rounded-lg"
+                type="submit"
+                disabled={loading || !username.trim() || !password.trim()}
+                className="w-full py-2 px-3 rounded-md bg-[#238636] hover:bg-[#2ea043] active:bg-[#238636] text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-sm"
               >
-                <span className="text-sovereign-400 font-medium">Admin</span>
-                <br />admin / admin123
-              </button>
-              <button
-                type="button"
-                onClick={() => { setUsername('eng_rajesh'); setPassword('engineer123') }}
-                className="btn-ghost text-center py-2 border border-surface-300/30 rounded-lg"
-              >
-                <span className="text-sovereign-400 font-medium">Engineer</span>
-                <br />eng_rajesh / engineer123
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span>Sign in</span>
+                )}
               </button>
             </div>
+          </form>
+        </div>
+
+        {/* Secondary Clean Box: Quick Persona Switcher */}
+        <div className="bg-[#161b22] border border-[#30363d] rounded-md p-4 text-center text-xs text-[#8b949e] flex flex-col gap-2">
+          <span>Demo credentials for evaluation:</span>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickFill('eng_rajesh', 'engineer123')}
+              className={`px-3 py-1 rounded text-xs transition-colors border ${
+                username === 'eng_rajesh'
+                  ? 'bg-indigo-900/40 text-indigo-300 border-indigo-500/50'
+                  : 'bg-[#0d1117] text-[#c9d1d9] border-[#30363d] hover:border-slate-500'
+              }`}
+            >
+              Engineer (<span className="font-mono">eng_rajesh</span>)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickFill('admin', 'admin123')}
+              className={`px-3 py-1 rounded text-xs transition-colors border ${
+                username === 'admin'
+                  ? 'bg-indigo-900/40 text-indigo-300 border-indigo-500/50'
+                  : 'bg-[#0d1117] text-[#c9d1d9] border-[#30363d] hover:border-slate-500'
+              }`}
+            >
+              Admin (<span className="font-mono">admin</span>)
+            </button>
           </div>
         </div>
 
-        {/* Sovereign footer */}
-        <div className="flex items-center justify-center gap-2 mt-6 text-xs text-slate-600">
-          <Shield className="w-3.5 h-3.5" />
-          <span>All data stays on-premise · No internet connection required</span>
-        </div>
       </div>
+
+      {/* Minimal Footer */}
+      <footer className="w-full max-w-[400px] text-center text-[11px] text-[#8b949e] flex flex-col items-center gap-2 mt-8">
+        <div className="flex items-center justify-center gap-4">
+          <span className="hover:text-[#58a6ff] cursor-pointer">SOPs & Specs</span>
+          <span>·</span>
+          <span className="hover:text-[#58a6ff] cursor-pointer">Architecture Proof</span>
+          <span>·</span>
+          <span className="hover:text-[#58a6ff] cursor-pointer">Air-Gap Status</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] text-[#8b949e]/80">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <span>100% on-premise execution · Zero external API calls</span>
+        </div>
+      </footer>
+
     </div>
   )
 }

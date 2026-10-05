@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base Layer ─── */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-surface-100 text-slate-100 font-sans;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  #root {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Custom scrollbar — thin, dark, subtle */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* ─── Component Layer ─── */
+@layer components {
+  /* Glass-effect card surface */
+  .card-surface {
+    @apply bg-surface-50 border border-surface-300/50 rounded-xl;
+  }
+
+  /* Smooth input field */
+  .input-field {
+    @apply bg-surface-200 border border-surface-300 rounded-lg px-4 py-3
+           text-slate-100 placeholder-slate-500
+           focus:outline-none focus:ring-2 focus:ring-sovereign-500/50 focus:border-sovereign-500
+           transition-all duration-200;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply bg-sovereign-600 hover:bg-sovereign-500 text-white
+           px-4 py-2.5 rounded-lg font-medium
+           transition-all duration-200 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Ghost/subtle button */
+  .btn-ghost {
+    @apply text-slate-400 hover:text-slate-100 hover:bg-surface-50
+           px-3 py-2 rounded-lg
+           transition-all duration-200;
+  }
+
+  /* Routing badge pill */
+  .routing-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+           text-xs font-medium bg-sovereign-600/20 text-sovereign-400
+           border border-sovereign-500/30;
+  }
+
+  /* Citation card */
+  .citation-card {
+    @apply flex items-start gap-2 px-3 py-2 rounded-lg
+           bg-surface-200/50 border border-surface-300/30
+           hover:border-sovereign-500/40 cursor-pointer
+           transition-all duration-200 text-sm;
+  }
+
+  /* Safety warning banner */
+  .safety-banner {
+    @apply flex items-center gap-2 px-4 py-3 rounded-lg
+           bg-danger/10 border border-danger/30 text-danger;
+  }
+
+  /* Status indicator dot */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  .status-dot-online { @apply bg-success animate-pulse-slow; }
+  .status-dot-offline { @apply bg-danger; }
+
+  /* Chat message container */
+  .message-user {
+    @apply bg-surface-200 rounded-2xl rounded-br-md px-4 py-3;
+  }
+  .message-assistant {
+    @apply bg-transparent;
+  }
+
+  /* Thinking trace step */
+  .trace-step {
+    @apply flex items-start gap-2 text-sm text-slate-400 py-1
+           border-l-2 border-sovereign-600/30 pl-3;
+  }
+
+  /* Agent progress DAG step */
+  .dag-step {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium;
+  }
+  .dag-step-active {
+    @apply bg-sovereign-600/20 text-sovereign-400 border border-sovereign-500/30;
+  }
+  .dag-step-done {
+    @apply bg-success/20 text-success border border-success/30;
+  }
+  .dag-step-pending {
+    @apply bg-surface-200 text-slate-500 border border-surface-300;
+  }
+}
+
+/* ─── Utility Layer ─── */
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-sovereign-400 to-sovereign-600;
+  }
+}

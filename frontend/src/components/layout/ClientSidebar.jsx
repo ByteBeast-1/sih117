@@ -1,17 +1,19 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { AuthContext } from '../../App'
 import {
-  Menu, History, Settings, Library, Search, LogOut, ChevronDown,
-  Brain, FileSearch, Code2, FileOutput, FileText, Download,
-  ShieldCheck, Network
+  Menu, History, Settings, Library, LogOut, ChevronDown,
+  MessageSquareCode, FileSearch, Code2, FileOutput, FolderArchive,
+  FileText, ShieldCheck, Network, ExternalLink, Trash2
 } from 'lucide-react'
+import { apiClient } from '../../services/api'
 
 const AGENTS = [
-  { id: 'orchestrator', path: '/',            label: 'General Chat',     icon: Brain,      color: 'text-purple-400' },
-  { id: 'analyzer',     path: '/analyzer',    label: 'Analyser Agent',   icon: FileSearch, color: 'text-amber-400' },
-  { id: 'generator',    path: '/generator',   label: 'Generator AI',     icon: FileOutput, color: 'text-indigo-400' },
-  { id: 'sandbox',      path: '/sandbox',     label: 'Code Sandbox',     icon: Code2,      color: 'text-teal-400' },
+  { id: 'orchestrator', path: '/',            label: 'General Chat',       icon: MessageSquareCode, color: 'text-purple-400' },
+  { id: 'analyzer',     path: '/analyzer',    label: 'Analyser Agent',     icon: FileSearch,        color: 'text-amber-400' },
+  { id: 'generator',    path: '/generator',   label: 'Generator AI',       icon: FileOutput,        color: 'text-indigo-400' },
+  { id: 'sandbox',      path: '/sandbox',     label: 'Code Sandbox',       icon: Code2,             color: 'text-teal-400' },
+  { id: 'artifacts',    path: '/artifacts',   label: 'Artifacts Library',  icon: FolderArchive,     color: 'text-blue-400' },
 ]
 
 export default function ClientSidebar() {
@@ -20,29 +22,60 @@ export default function ClientSidebar() {
   const { user, logout } = useContext(AuthContext)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showProofModal, setShowProofModal] = useState(false)
+  const [conversations, setConversations] = useState([])
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true)
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
+  const loadHistory = async () => {
+    try {
+      const res = await apiClient.getConversations()
+      if (res && res.conversations) {
+        setConversations(res.conversations)
+      }
+    } catch (err) {
+      console.warn('Could not load chat history:', err)
+    }
+  }
+
+  useEffect(() => {
+    loadHistory()
+  }, [location.pathname])
+
+  const handleDeleteConvo = async (id, e) => {
+    e.stopPropagation()
+    try {
+      await apiClient.deleteConversation(id)
+      setConversations(prev => prev.filter(c => c.id !== id))
+    } catch (err) {
+      console.error('Failed to delete conversation:', err)
+    }
+  }
+
   return (
-    <div className="h-full w-[260px] bg-[#131314] border-r border-surface-300 flex flex-col z-20 overflow-y-auto shrink-0">
+    <div className="h-full w-[260px] bg-[#131314] border-r border-surface-300 flex flex-col z-20 overflow-y-auto shrink-0 select-none">
       
       {/* Brand & Menu */}
       <div className="flex items-center gap-3 px-4 h-14 mt-2">
-        <button className="p-2 text-slate-300 hover:bg-surface-200 rounded-full transition-colors">
+        <button className="p-2 text-slate-300 hover:bg-surface-200 rounded-lg transition-colors">
           <Menu className="w-5 h-5" />
         </button>
-        <div className="font-medium text-slate-200 text-lg tracking-wide">MRPL Sovereign</div>
+        <div className="font-semibold text-slate-100 text-base tracking-wide flex items-center gap-2">
+          <span>MRPL Sovereign</span>
+        </div>
       </div>
 
       <div className="flex-1 px-3 py-4 flex flex-col gap-6">
         
-        {/* AGENTS Section */}
+        {/* WORKSPACE AGENTS Section */}
         <div>
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">Workspace</div>
-          <div className="space-y-1">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2.5">
+            Workspace Hub
+          </div>
+          <div className="space-y-1.5">
             {AGENTS.map((agent) => {
               const isActive = location.pathname === agent.path
               const Icon = agent.icon
@@ -50,99 +83,114 @@ export default function ClientSidebar() {
                 <button
                   key={agent.id}
                   onClick={() => navigate(agent.path)}
-                  className={`w-full flex items-center px-3 py-2 gap-3 rounded-full transition-colors text-sm ${
+                  className={`w-full flex items-center px-3.5 py-2.5 gap-3.5 rounded-2xl transition-all duration-150 text-sm font-medium ${
                     isActive
-                      ? 'bg-surface-200/50 text-slate-200 font-medium'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-surface-200'
+                      ? 'bg-surface-200 text-slate-100 font-semibold shadow-sm border border-surface-300'
+                      : 'text-slate-300 hover:text-white hover:bg-surface-200/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? agent.color : ''}`} />
-                  {agent.label}
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? agent.color : 'text-slate-400'}`} />
+                  <span className="truncate">{agent.label}</span>
                 </button>
               )
             })}
           </div>
         </div>
 
-        {/* ARTIFACTS Section (Generated Files) */}
-        <div>
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">Artifacts</div>
-          <div className="space-y-1">
-            <button className="w-full flex justify-between items-center px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-lg transition-colors text-xs group">
-              <div className="flex items-center gap-2 truncate">
-                <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span className="truncate">Q3_Yield_Report.pdf</span>
-              </div>
-              <Download className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+        {/* PERSISTENT DATABASE CHAT HISTORY Section */}
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between px-3 mb-1.5">
+            <button
+              onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+              className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2 hover:text-slate-300 transition-colors"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Session History</span>
             </button>
-            <button className="w-full flex justify-between items-center px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-lg transition-colors text-xs group">
-              <div className="flex items-center gap-2 truncate">
-                <FileText className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                <span className="truncate">Safety_Audit.pptx</span>
-              </div>
-              <Download className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-            </button>
-            <button className="w-full flex justify-between items-center px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-lg transition-colors text-xs group">
-              <div className="flex items-center gap-2 truncate">
-                <FileText className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span className="truncate">Flow_Data.csv</span>
-              </div>
-              <Download className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-            </button>
+            <span className="text-xs font-mono text-slate-500">{conversations.length}</span>
           </div>
-        </div>
 
-        {/* HISTORY Section */}
-        <div>
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">History</div>
-          <div className="group rounded-2xl transition-all duration-300 hover:bg-surface-200/30">
-            <button className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 group-hover:text-slate-200 rounded-full transition-colors text-sm">
-              <History className="w-4 h-4" /> Chat History
-            </button>
-            <div className="h-0 overflow-hidden group-hover:h-[140px] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 pl-4 pr-3">
-              <div className="py-1 space-y-1 border-l border-surface-300/50 ml-3 pl-4 mb-2">
-                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 mt-1">Today</div>
-                <button className="w-full text-left py-1 text-xs text-slate-400 hover:text-slate-200 truncate">
-                  CDU-1 Pump Diagnostics
-                </button>
-                <button className="w-full text-left py-1 text-xs text-slate-400 hover:text-slate-200 truncate">
-                  Q3 Yield Optimization
-                </button>
-                <button className="w-full text-left py-1 text-xs text-slate-400 hover:text-slate-200 truncate">
-                  Valve Leak Simulation
-                </button>
-              </div>
+          {isHistoryOpen && (
+            <div className="space-y-1 mt-1 max-h-[220px] overflow-y-auto pr-1">
+              {conversations.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-slate-500 italic">
+                  No sessions recorded yet.
+                </div>
+              ) : (
+                conversations.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => {
+                      if (c.agent === 'analyzer') navigate('/analyzer')
+                      else if (c.agent === 'generator') navigate('/generator')
+                      else if (c.agent === 'sandbox') navigate('/sandbox')
+                      else navigate(`/?convo=${c.id}`)
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-surface-200/60 transition-colors group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="w-2 h-2 rounded-full bg-slate-500 group-hover:bg-indigo-400 shrink-0 transition-colors" />
+                      <span className="truncate max-w-[170px]" title={c.title}>
+                        {c.title}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteConvo(c.id, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 rounded transition-opacity shrink-0"
+                      title="Delete Session"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* MANAGE Section */}
-        <div className="mt-auto pt-4">
-          <div className="space-y-1">
-            {/* Added Architecture Proof Button */}
-            <button onClick={() => setShowProofModal(true)} className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-full transition-colors text-sm">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> System Architecture Proof
+        {/* MANAGEMENT & AUDIT Section */}
+        <div className="mt-auto pt-4 border-t border-surface-300/40">
+          <div className="space-y-1.5">
+            <button 
+              onClick={() => setShowProofModal(true)} 
+              className="w-full flex items-center px-3.5 py-2.5 gap-3.5 text-slate-300 hover:text-white hover:bg-surface-200/60 rounded-2xl transition-colors text-sm font-medium"
+            >
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span>Architecture & Security Proof</span>
             </button>
             
             {user?.role === 'admin' && (
-              <button onClick={() => navigate('/admin')} className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 hover:text-slate-200 hover:bg-surface-200 rounded-full transition-colors text-sm">
-                <Settings className="w-4 h-4" /> Admin Dashboard
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="w-full flex items-center px-3.5 py-2.5 gap-3.5 text-slate-300 hover:text-white hover:bg-surface-200/60 rounded-2xl transition-colors text-sm font-medium"
+              >
+                <Settings className="w-5 h-5 text-slate-400 shrink-0" />
+                <span>Admin Diagnostics</span>
               </button>
             )}
             
-            <div className="group rounded-2xl transition-all duration-300 hover:bg-surface-200/30">
-              <button className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 group-hover:text-slate-200 rounded-full transition-colors text-sm">
-                <Library className="w-4 h-4" /> MRPL SOP Docs
-              </button>
-              <div className="h-0 overflow-hidden group-hover:h-[90px] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 pl-4 pr-3">
-                <div className="py-1 space-y-1 border-l border-surface-300/50 ml-3 pl-4 mb-2">
-                  <a href="/docs/MRPL_C301_Distillation_Column_Specs.txt" download="MRPL_C301_Specs.txt" className="w-full flex text-left py-1 text-xs text-slate-400 hover:text-slate-200 truncate">
-                    📄 C301_Column_Specs.txt
-                  </a>
-                  <a href="/docs/MRPL_Maintenance_Log_August.txt" download="MRPL_Maintenance_Log.txt" className="w-full flex text-left py-1 text-xs text-slate-400 hover:text-slate-200 truncate">
-                    📄 Maintenance_Log_Aug.txt
-                  </a>
-                </div>
+            <div className="group rounded-2xl transition-all duration-200 hover:bg-surface-200/40">
+              <div className="flex items-center px-3.5 py-2.5 gap-3.5 text-slate-300 text-sm font-medium">
+                <Library className="w-5 h-5 text-slate-400 shrink-0" />
+                <span>Refinery SOP Library</span>
+              </div>
+              <div className="py-1 space-y-1.5 pl-10 pr-2">
+                <a 
+                  href="/docs/MRPL_C301_Distillation_Column_Specs.txt" 
+                  download="MRPL_C301_Specs.txt" 
+                  className="flex items-center gap-2 py-1 text-xs text-slate-400 hover:text-indigo-400 truncate transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5 shrink-0 text-slate-500" />
+                  <span className="truncate">C301_Column_Specs.txt</span>
+                </a>
+                <a 
+                  href="/docs/MRPL_Maintenance_Log_August.txt" 
+                  download="MRPL_Maintenance_Log.txt" 
+                  className="flex items-center gap-2 py-1 text-xs text-slate-400 hover:text-indigo-400 truncate transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5 shrink-0 text-slate-500" />
+                  <span className="truncate">Maintenance_Log_Aug.txt</span>
+                </a>
               </div>
             </div>
           </div>
@@ -150,17 +198,17 @@ export default function ClientSidebar() {
       </div>
 
       {/* Bottom User Area */}
-      <div className="p-4 border-t border-surface-300 relative shrink-0">
+      <div className="p-3 border-t border-surface-300 relative shrink-0 bg-[#161618]">
         <button 
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-surface-200 transition-colors text-left"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-surface-200 transition-colors text-left"
         >
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
-            {user?.username?.charAt(0).toUpperCase() || 'U'}
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+            {user?.username?.charAt(0).toUpperCase() || 'E'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-slate-300 truncate">{user?.username || 'Guest'}</div>
-            <div className="text-[10px] text-slate-500 truncate">{user?.role || 'user'}</div>
+            <div className="text-sm font-semibold text-slate-200 truncate">{user?.username || 'eng_rajesh'}</div>
+            <div className="text-xs text-slate-400 uppercase font-mono">{user?.role || 'Engineer'}</div>
           </div>
           <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
         </button>
@@ -168,8 +216,11 @@ export default function ClientSidebar() {
         {showUserMenu && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-            <div className="absolute bottom-full left-4 mb-2 w-56 bg-surface-100 border border-surface-300 rounded-lg shadow-xl z-50 p-2 animate-fade-in">
-              <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-danger/10 rounded-lg transition-colors">
+            <div className="absolute bottom-full left-3 mb-2 w-52 bg-[#1c1c1e] border border-surface-300 rounded-xl shadow-xl z-50 p-1.5 animate-fade-in">
+              <button 
+                onClick={handleLogout} 
+                className="w-full flex items-center gap-2 px-3.5 py-2 text-sm text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+              >
                 <LogOut className="w-4 h-4" /> Sign Out
               </button>
             </div>
@@ -177,73 +228,55 @@ export default function ClientSidebar() {
         )}
       </div>
 
-      {/* Proof Modal */}
+      {/* System Architecture & Security Proof Modal */}
       {showProofModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#1e1e1e] border border-surface-300 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
-            <div className="flex justify-between items-center p-5 border-b border-surface-300 bg-surface-200/50">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#1a1a1c] border border-surface-300 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-surface-300 bg-surface-200/50">
               <div className="flex items-center gap-3">
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                <h2 className="text-lg font-semibold text-white">System Architecture & Security Proof</h2>
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <h2 className="text-base font-bold text-white">System Architecture & Offline Security Proof</h2>
               </div>
               <button onClick={() => setShowProofModal(false)} className="text-slate-400 hover:text-white transition-colors text-2xl leading-none">&times;</button>
             </div>
             
-            <div className="p-6 overflow-y-auto flex-1 text-sm text-slate-300 space-y-6">
+            <div className="p-6 overflow-y-auto flex-1 text-xs text-slate-300 space-y-5">
               
-              <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-5">
-                <h3 className="text-emerald-400 font-semibold text-base mb-3 flex items-center gap-2"><Network className="w-5 h-5"/> 100% On-Premise Execution</h3>
-                <p className="mb-4">This system makes <strong>ZERO</strong> external API calls. All data, inference, and analysis occurs strictly within the local MRPL environment.</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
-                    <div className="text-xs text-slate-500 mb-1">Frontend Gateway</div>
-                    <div className="font-mono text-emerald-300">http://localhost:3000</div>
+              <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-4">
+                <h3 className="text-emerald-400 font-semibold text-sm mb-2 flex items-center gap-2">
+                  <Network className="w-4 h-4"/> 100% On-Premise Execution
+                </h3>
+                <p className="mb-3 text-slate-400 leading-relaxed">
+                  This system makes <strong>ZERO</strong> external API calls. All reasoning, knowledge retrieval, and file generation occurs strictly on local hardware.
+                </p>
+                <div className="grid grid-cols-2 gap-3 text-[11px]">
+                  <div className="bg-[#121214] rounded-lg p-2.5 border border-surface-300">
+                    <div className="text-slate-500 mb-0.5">Frontend Client</div>
+                    <div className="font-mono text-emerald-400">http://localhost:3000</div>
                   </div>
-                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
-                    <div className="text-xs text-slate-500 mb-1">FastAPI Backend</div>
-                    <div className="font-mono text-emerald-300">http://localhost:8000</div>
+                  <div className="bg-[#121214] rounded-lg p-2.5 border border-surface-300">
+                    <div className="text-slate-500 mb-0.5">FastAPI Backend</div>
+                    <div className="font-mono text-emerald-400">http://localhost:8000</div>
                   </div>
-                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
-                    <div className="text-xs text-slate-500 mb-1">Ollama Engine (Inference)</div>
-                    <div className="font-mono text-emerald-300">http://localhost:11434</div>
+                  <div className="bg-[#121214] rounded-lg p-2.5 border border-surface-300">
+                    <div className="text-slate-500 mb-0.5">Local LLM Engine</div>
+                    <div className="font-mono text-emerald-400">http://localhost:11434 (Ollama)</div>
                   </div>
-                  <div className="bg-[#131314] rounded-lg p-3 border border-surface-300">
-                    <div className="text-xs text-slate-500 mb-1">Vector DB</div>
-                    <div className="font-mono text-emerald-300">ChromaDB (Local File)</div>
+                  <div className="bg-[#121214] rounded-lg p-2.5 border border-surface-300">
+                    <div className="text-slate-500 mb-0.5">Vector Knowledge Base</div>
+                    <div className="font-mono text-emerald-400">ChromaDB (Embedded Storage)</div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-5">
-                <h3 className="text-indigo-400 font-semibold text-base mb-3 flex items-center gap-2"><Network className="w-5 h-5"/> LangGraph & LangChain Architecture</h3>
-                <p className="mb-4">The backend routing utilizes LangGraph's StateGraph paradigm to orchestrate a multi-agent workflow.</p>
-                <div className="bg-[#131314] rounded-lg p-4 border border-surface-300 font-mono text-xs overflow-x-auto text-indigo-200">
-                  <pre>
-{`{
-  "framework": "LangChain + LangGraph",
-  "architecture": {
-    "type": "StateGraph Multi-Agent System",
-    "supervisor_node": "Intent classification → routes to specialized agent nodes",
-    "agent_nodes": [
-      {"name": "Conversational", "model": "qwen2.5:3b"},
-      {"name": "Knowledge (RAG)", "model": "qwen2.5:3b", "vector_db": "ChromaDB"},
-      {"name": "Math", "model": "qwen2.5:3b"},
-      {"name": "Code", "model": "qwen2.5:3b"},
-      {"name": "Generation", "model": "qwen2.5:3b", "engines": ["fpdf2", "python-pptx", "openpyxl"]},
-      {"name": "Vision", "model": "qwen2.5:3b"}
-    ]
-  }
-}`}
-                  </pre>
-                </div>
-              </div>
-
-              <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-5">
-                <h3 className="text-blue-400 font-semibold text-base mb-3 flex items-center gap-2"><ShieldCheck className="w-5 h-5"/> How to Verify Offline Capability</h3>
-                <ol className="list-decimal pl-5 space-y-2 mb-4">
-                  <li><strong>Turn off Wi-Fi (Airplane Mode)</strong>: Disconnect from the internet completely. Ask the Generator Agent to create a document. It will successfully generate and download offline.</li>
-                  <li><strong>Check Browser Network Tab (F12)</strong>: Open Developer Tools (F12), go to Network, and send a message. You will see 0 requests going to external domains (like api.openai.com). All traffic routes strictly to <code>localhost</code>.</li>
-                  <li><strong>Verify via Task Manager</strong>: Open Windows Task Manager. You will observe the <code>ollama</code> process utilizing local CPU/GPU/RAM to perform inference directly on the machine.</li>
+              <div className="bg-surface-200/40 border border-surface-300 rounded-xl p-4 space-y-2">
+                <h3 className="text-slate-100 font-semibold text-sm flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-indigo-400"/> Air-Gap Verification Steps for Judges
+                </h3>
+                <ol className="list-decimal pl-5 space-y-1.5 text-slate-400 leading-relaxed">
+                  <li><strong>Physical Disconnect (Airplane Mode):</strong> You can disconnect from Wi-Fi completely. The system will continue to parse documents, run code, and generate reports.</li>
+                  <li><strong>Browser Network Tab:</strong> Open Developer Tools (F12) &rarr; Network. Inspect all network traffic — 100% of network traffic routes strictly to <code>localhost</code>.</li>
+                  <li><strong>Docker Container Isolation:</strong> Code execution runs in an ephemeral container with <code>--network none</code>, blocking all socket requests.</li>
                 </ol>
               </div>
 
