@@ -178,7 +178,7 @@ export default function ClientWorkbench() {
 
         {/* Input Area */}
         <div className="p-4 bg-surface-100 flex justify-center border-t border-surface-300/50">
-          <div className="w-full max-w-4xl relative bg-[#1c1c1e] rounded-2xl border border-surface-300 focus-within:border-indigo-500/60 transition-colors shadow-lg">
+          <div className="w-full max-w-4xl relative bg-[#1c1c1e] rounded-3xl border border-surface-300 focus-within:border-indigo-500/60 transition-colors shadow-lg">
             <form onSubmit={handleSend} className="flex flex-col">
               <textarea
                 value={input}
@@ -190,13 +190,13 @@ export default function ClientWorkbench() {
                   }
                 }}
                 placeholder="Ask technical questions, run simulations, or request reports..."
-                className="w-full bg-transparent text-slate-100 placeholder-slate-500 py-3.5 px-4 min-h-[52px] max-h-[180px] resize-y focus:outline-none text-xs leading-relaxed"
+                className="w-full bg-transparent text-slate-100 placeholder-slate-500 py-4 px-5 min-h-[56px] max-h-[180px] resize-y focus:outline-none text-sm leading-relaxed"
                 rows={1}
               />
               
-              <div className="flex items-center justify-between px-4 pb-2.5 pt-1 border-t border-surface-300/30">
-                <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                  <span className="px-1.5 py-0.5 rounded bg-surface-300/50 text-slate-400 font-mono">Shift + Enter</span>
+              <div className="flex items-center justify-between px-5 pb-3 pt-1 border-t border-surface-300/30">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="px-1.5 py-0.5 rounded bg-surface-300/50 text-slate-400 font-mono text-[11px]">Shift + Enter</span>
                   <span>for new line</span>
                 </div>
 
@@ -204,13 +204,13 @@ export default function ClientWorkbench() {
                   <button
                     type="submit"
                     disabled={!input.trim() || isProcessing}
-                    className="rounded-lg px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs disabled:opacity-40 transition-colors flex items-center gap-1.5 shadow-sm"
+                    className="rounded-full px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm disabled:opacity-40 transition-colors flex items-center gap-2 shadow-sm"
                   >
                     {isProcessing ? (
-                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
                       <>
-                        <Send className="w-3.5 h-3.5" />
+                        <Send className="w-4 h-4" />
                         <span>Send</span>
                       </>
                     )}
@@ -224,12 +224,12 @@ export default function ClientWorkbench() {
 
       {/* Right: Supervisor Reasoning & Execution Trace Panel */}
       <div className="w-[300px] bg-[#161618] border-l border-surface-300 flex flex-col shrink-0">
-        <div className="px-4 py-3.5 border-b border-surface-300 flex items-center justify-between bg-surface-200/40">
+        <div className="px-4 py-4 border-b border-surface-300 flex items-center justify-between bg-surface-200/40">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-indigo-400" />
-            <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Supervisor Trace</h2>
+            <Activity className="w-5 h-5 text-indigo-400" />
+            <h2 className="text-sm font-semibold text-slate-200 tracking-wide">Supervisor Trace</h2>
           </div>
-          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             LOCAL
           </span>
         </div>

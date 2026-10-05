@@ -80,8 +80,14 @@ export default function GenerationAgent() {
     setIsProcessing(true)
 
     try {
-      // Prefix with [Generate Type] so the backend generator prompt context is set
-      const res = await apiClient.sendMessage(`[Generate ${formatToUse.label}] ${userMsg.content}`)
+      // Build prompt payload and include grounded analysis content if available
+      let promptPayload = `[Generate ${formatToUse.label}] ${userMsg.content}`
+      if (previewDoc?.content && previewDoc.content.trim().length > 0) {
+        promptPayload += `\n\n[Grounding Source Context / Analyzed Document Content]:\n${previewDoc.content}`
+      }
+
+      // Send with session 'analyzer' so backend links to any uploaded session documents
+      const res = await apiClient.sendMessage(promptPayload, [], 'analyzer')
       
       const file = (res.generated_files && res.generated_files.length > 0) ? res.generated_files[0] : null
       let downloadSection = ''
@@ -100,13 +106,16 @@ export default function GenerationAgent() {
       }
       setMessages(prev => [...prev, assistantMsg])
 
+      const cleanTitle = userMsg.content.slice(0, 45).replace(/^(Generate|Compile)\s+/i, '') || 'Generated Document'
+      const cleanFileSlug = cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Report'
+
       // Update right-side Live Preview
       setPreviewDoc({
-        title: userMsg.content.slice(0, 45) || 'Generated Deliverable',
+        title: cleanTitle,
         type: formatToUse.id,
         typeLabel: formatToUse.label,
         content: docContent,
-        filename: file ? file.filename : `MRPL_Doc_${Date.now().toString().slice(-4)}${formatToUse.ext}`,
+        filename: file ? file.filename : `${cleanFileSlug}_${Date.now().toString().slice(-4)}${formatToUse.ext}`,
         downloadUrl: file ? `http://localhost:8000${file.download_url}` : null,
         sizeKb: file ? file.size_kb : Math.max(6, Math.round(docContent.length / 90)),
         status: 'Compiled 100% On-Premise'

@@ -65,9 +65,6 @@ export default function ClientSidebar() {
         </button>
         <div className="font-semibold text-slate-100 text-base tracking-wide flex items-center gap-2">
           <span>MRPL Sovereign</span>
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            AIR-GAP
-          </span>
         </div>
       </div>
 
@@ -75,10 +72,10 @@ export default function ClientSidebar() {
         
         {/* WORKSPACE AGENTS Section */}
         <div>
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2.5">
             Workspace Hub
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {AGENTS.map((agent) => {
               const isActive = location.pathname === agent.path
               const Icon = agent.icon
@@ -86,13 +83,13 @@ export default function ClientSidebar() {
                 <button
                   key={agent.id}
                   onClick={() => navigate(agent.path)}
-                  className={`w-full flex items-center px-3 py-2 gap-3 rounded-xl transition-all duration-150 text-xs ${
+                  className={`w-full flex items-center px-3.5 py-2.5 gap-3.5 rounded-2xl transition-all duration-150 text-sm font-medium ${
                     isActive
                       ? 'bg-surface-200 text-slate-100 font-semibold shadow-sm border border-surface-300'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-surface-200/60'
+                      : 'text-slate-300 hover:text-white hover:bg-surface-200/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? agent.color : 'text-slate-400'}`} />
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? agent.color : 'text-slate-400'}`} />
                   <span className="truncate">{agent.label}</span>
                 </button>
               )
@@ -102,21 +99,21 @@ export default function ClientSidebar() {
 
         {/* PERSISTENT DATABASE CHAT HISTORY Section */}
         <div className="flex flex-col">
-          <div className="flex items-center justify-between px-3 mb-1">
+          <div className="flex items-center justify-between px-3 mb-1.5">
             <button
               onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-              className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 hover:text-slate-300 transition-colors"
+              className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2 hover:text-slate-300 transition-colors"
             >
-              <History className="w-3 h-3" />
+              <History className="w-3.5 h-3.5" />
               <span>Session History</span>
             </button>
-            <span className="text-[9px] font-mono text-slate-500">{conversations.length}</span>
+            <span className="text-xs font-mono text-slate-500">{conversations.length}</span>
           </div>
 
           {isHistoryOpen && (
-            <div className="space-y-0.5 mt-1 max-h-[190px] overflow-y-auto pr-1">
+            <div className="space-y-1 mt-1 max-h-[220px] overflow-y-auto pr-1">
               {conversations.length === 0 ? (
-                <div className="px-3 py-2 text-[11px] text-slate-500 italic">
+                <div className="px-3 py-2 text-xs text-slate-500 italic">
                   No sessions recorded yet.
                 </div>
               ) : (
@@ -129,10 +126,10 @@ export default function ClientSidebar() {
                       else if (c.agent === 'sandbox') navigate('/sandbox')
                       else navigate(`/?convo=${c.id}`)
                     }}
-                    className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-slate-100 hover:bg-surface-200/60 transition-colors group cursor-pointer"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-surface-200/60 transition-colors group cursor-pointer"
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-indigo-400 shrink-0 transition-colors" />
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="w-2 h-2 rounded-full bg-slate-500 group-hover:bg-indigo-400 shrink-0 transition-colors" />
                       <span className="truncate max-w-[170px]" title={c.title}>
                         {c.title}
                       </span>
@@ -142,7 +139,7 @@ export default function ClientSidebar() {
                       className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 rounded transition-opacity shrink-0"
                       title="Delete Session"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))
@@ -153,45 +150,45 @@ export default function ClientSidebar() {
 
         {/* MANAGEMENT & AUDIT Section */}
         <div className="mt-auto pt-4 border-t border-surface-300/40">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <button 
               onClick={() => setShowProofModal(true)} 
-              className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 hover:text-slate-200 hover:bg-surface-200/60 rounded-xl transition-colors text-xs"
+              className="w-full flex items-center px-3.5 py-2.5 gap-3.5 text-slate-300 hover:text-white hover:bg-surface-200/60 rounded-2xl transition-colors text-sm font-medium"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
               <span>Architecture & Security Proof</span>
             </button>
             
             {user?.role === 'admin' && (
               <button 
                 onClick={() => navigate('/admin')} 
-                className="w-full flex items-center px-3 py-2 gap-3 text-slate-400 hover:text-slate-200 hover:bg-surface-200/60 rounded-xl transition-colors text-xs"
+                className="w-full flex items-center px-3.5 py-2.5 gap-3.5 text-slate-300 hover:text-white hover:bg-surface-200/60 rounded-2xl transition-colors text-sm font-medium"
               >
-                <Settings className="w-4 h-4 text-slate-400 shrink-0" />
+                <Settings className="w-5 h-5 text-slate-400 shrink-0" />
                 <span>Admin Diagnostics</span>
               </button>
             )}
             
-            <div className="group rounded-xl transition-all duration-200 hover:bg-surface-200/40">
-              <div className="flex items-center px-3 py-2 gap-3 text-slate-400 text-xs">
-                <Library className="w-4 h-4 text-slate-400 shrink-0" />
+            <div className="group rounded-2xl transition-all duration-200 hover:bg-surface-200/40">
+              <div className="flex items-center px-3.5 py-2.5 gap-3.5 text-slate-300 text-sm font-medium">
+                <Library className="w-5 h-5 text-slate-400 shrink-0" />
                 <span>Refinery SOP Library</span>
               </div>
-              <div className="py-1 space-y-1 pl-8 pr-2">
+              <div className="py-1 space-y-1.5 pl-10 pr-2">
                 <a 
                   href="/docs/MRPL_C301_Distillation_Column_Specs.txt" 
                   download="MRPL_C301_Specs.txt" 
-                  className="flex items-center gap-1.5 py-1 text-[11px] text-slate-400 hover:text-indigo-400 truncate transition-colors"
+                  className="flex items-center gap-2 py-1 text-xs text-slate-400 hover:text-indigo-400 truncate transition-colors"
                 >
-                  <FileText className="w-3 h-3 shrink-0 text-slate-500" />
+                  <FileText className="w-3.5 h-3.5 shrink-0 text-slate-500" />
                   <span className="truncate">C301_Column_Specs.txt</span>
                 </a>
                 <a 
                   href="/docs/MRPL_Maintenance_Log_August.txt" 
                   download="MRPL_Maintenance_Log.txt" 
-                  className="flex items-center gap-1.5 py-1 text-[11px] text-slate-400 hover:text-indigo-400 truncate transition-colors"
+                  className="flex items-center gap-2 py-1 text-xs text-slate-400 hover:text-indigo-400 truncate transition-colors"
                 >
-                  <FileText className="w-3 h-3 shrink-0 text-slate-500" />
+                  <FileText className="w-3.5 h-3.5 shrink-0 text-slate-500" />
                   <span className="truncate">Maintenance_Log_Aug.txt</span>
                 </a>
               </div>
@@ -204,16 +201,16 @@ export default function ClientSidebar() {
       <div className="p-3 border-t border-surface-300 relative shrink-0 bg-[#161618]">
         <button 
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="w-full flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-surface-200 transition-colors text-left"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-surface-200 transition-colors text-left"
         >
-          <div className="w-7 h-7 rounded-md bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
             {user?.username?.charAt(0).toUpperCase() || 'E'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold text-slate-200 truncate">{user?.username || 'eng_rajesh'}</div>
-            <div className="text-[10px] text-slate-500 uppercase font-mono">{user?.role || 'Engineer'}</div>
+            <div className="text-sm font-semibold text-slate-200 truncate">{user?.username || 'eng_rajesh'}</div>
+            <div className="text-xs text-slate-400 uppercase font-mono">{user?.role || 'Engineer'}</div>
           </div>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
         </button>
 
         {showUserMenu && (
@@ -222,9 +219,9 @@ export default function ClientSidebar() {
             <div className="absolute bottom-full left-3 mb-2 w-52 bg-[#1c1c1e] border border-surface-300 rounded-xl shadow-xl z-50 p-1.5 animate-fade-in">
               <button 
                 onClick={handleLogout} 
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-3.5 py-2 text-sm text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
               >
-                <LogOut className="w-3.5 h-3.5" /> Sign Out
+                <LogOut className="w-4 h-4" /> Sign Out
               </button>
             </div>
           </>

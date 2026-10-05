@@ -137,9 +137,17 @@ In accordance with the architectural specification of [SakthiCharukeshS/SIH26-Wo
 
 ---
 
-## 🐳 Docker Bundle & Air-Gap Deployment
+## 🐳 Docker Bundles & Air-Gap Deployment
 
-The entire system is containerized into a single, cohesive deployment stack.
+The entire system is containerized and pre-packaged into offline `.tar` image bundles for physical deployment to target laptops or servers with **zero internet connectivity** (e.g. transfer via encrypted USB drive):
+
+### Pre-Packaged Offline Image Bundles
+
+| Bundle Archive | Contents & Engine | Size | Load Command |
+|---|---|---|---|
+| **`sovereign_backend_bundle.tar`** | `sih26-backend:latest` (FastAPI, LangGraph, ChromaDB, Document Compilers) | 3.30 GB | `docker load -i sovereign_backend_bundle.tar` |
+| **`sovereign_frontend_bundle.tar`** | `sih26-sovereign-workbench-frontend:latest` (Nginx Alpine + Vite Production Dist) | 25.3 MB | `docker load -i sovereign_frontend_bundle.tar` |
+| **`sovereign_sandbox_airgap_bundle.tar`** | `python:3.10-slim` (Pre-baked `numpy`, `scipy`, `pandas`, `matplotlib`, `sympy`) | 167.5 MB | `docker load -i sovereign_sandbox_airgap_bundle.tar` |
 
 ### 1. Launch with Docker Compose (Single Command)
 ```bash
@@ -154,22 +162,14 @@ docker compose up -d --build
 docker compose ps
 ```
 
-### 2. Creating an Air-Gapped Offline Bundle (for USB Drive Transfer)
-For physical deployment to target laptops or servers with **zero internet connectivity**:
-
+### 2. Loading the Air-Gapped Offline Bundles (Zero Internet)
 ```bash
-# Step A: On build machine, save images to a tar bundle
-docker save \
-  sih26-sovereign-workbench-frontend:latest \
-  sih26-backend:latest \
-  ollama/ollama:latest \
-  python:3.10-slim \
-  -o sovereign_workbench_airgap_bundle.tar
+# Step A: Load the offline image bundles on target machine
+docker load -i sovereign_backend_bundle.tar
+docker load -i sovereign_frontend_bundle.tar
+docker load -i sovereign_sandbox_airgap_bundle.tar
 
-# Step B: Copy sovereign_workbench_airgap_bundle.tar & docker-compose.yml to USB drive
-
-# Step C: On the offline target machine (with Wi-Fi OFF):
-docker load -i sovereign_workbench_airgap_bundle.tar
+# Step B: Start containers without needing Docker registry access
 docker compose up -d
 ```
 
@@ -236,12 +236,12 @@ Evaluators and judges can independently audit the system's air-gap integrity:
 
 ---
 
-## ⚖️ Non-Negotiable Engineering Standards
+## ⚖️ Sovereign Engineering Principles
 
-This project strictly adheres to the four architectural pillars defined in [`NON_NEGOTIABLES.md`](file:///c:/Users/sande/OneDrive/Desktop/sih/SIH26-Sovereign-Workbench/NON_NEGOTIABLES.md):
+This project strictly adheres to industrial-grade sovereign engineering standards:
 
-1. **Prototype &rarr; Full Product, No Rework Conflicts:** Clean configuration-driven architecture; model names, paths, and thresholds are never hardcoded.
-2. **Clean, Efficient, Real Code:** Zero fake stubs or synthetic mockups dressed up as features; real Docker containers, real SQLite database transactions, real compiled documents.
+1. **Production-Ready Architecture:** Clean configuration-driven architecture; model names, paths, and thresholds are dynamically resolved rather than hardcoded.
+2. **Deterministic, Real Code:** Zero fake stubs or synthetic mockups dressed up as features; real Docker containers, real SQLite database transactions, real compiled document deliverables.
 3. **Zero Outbound Internet Calls:** Absolute air-gap compliance. No cloud fallbacks, no telemetry, no third-party CDN assets.
 4. **Document Grounding & Verifiable Citations:** Every answer cites local documents, pages, and subtopics; deterministic mathematical proofs with step-by-step audit traces.
 
