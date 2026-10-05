@@ -58,10 +58,11 @@ class ApiClient {
   }
 
   // ─── Multi-Document Upload for Analyzer Agent ───
-  async uploadDocuments(files, sessionId = 'analyzer') {
+  async uploadDocuments(files, sessionId = 'analyzer', clearExisting = true) {
     const formData = new FormData()
     files.forEach(f => formData.append('files', f))
     formData.append('session_id', sessionId)
+    formData.append('clear_existing', clearExisting ? 'true' : 'false')
     const token = localStorage.getItem('token')
     const headers = token ? { Authorization: `Bearer ${token}` } : {}
     const res = await fetch(`${this.baseUrl}/api/v1/agents/upload-documents`, {
@@ -74,6 +75,22 @@ class ApiClient {
       throw new Error(err.message || err.detail || `HTTP ${res.status}`)
     }
     return res.json()
+  }
+
+  async deleteDocument(filename, sessionId = 'analyzer') {
+    return this._fetch(`/api/v1/agents/documents/${encodeURIComponent(filename)}?session_id=${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async clearDocuments(sessionId = 'analyzer') {
+    return this._fetch(`/api/v1/agents/documents?session_id=${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async getSessionDocuments(sessionId = 'analyzer') {
+    return this._fetch(`/api/v1/agents/documents?session_id=${encodeURIComponent(sessionId)}`)
   }
 
   // ─── Knowledge Agent (direct, if needed) ───

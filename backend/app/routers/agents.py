@@ -382,12 +382,13 @@ async def _handle_conversational(query: str, thinking_trace: List[str], session:
 async def upload_documents(
     files: List[UploadFile] = File(...),
     session_id: str = Form("default"),
+    clear_existing: bool = Form(False),
 ):
     """Multi-file upload & extraction endpoint for Analyzer Agent.
     Supports PDF, DOCX, PPTX, XLSX, CSV, TXT, LOG, JSON, PY, etc.
     Extracts text 100% locally and stores in session context.
     """
-    if session_id not in session_documents:
+    if clear_existing or session_id not in session_documents:
         session_documents[session_id] = []
 
     extracted_files = []
@@ -454,9 +455,9 @@ async def upload_documents(
             "word_count": len(extracted_text.split()),
         }
         
-        # Avoid duplicate filenames in session
+        # Avoid duplicate filenames in session - insert newest at the beginning so it has analysis priority
         session_documents[session_id] = [d for d in session_documents[session_id] if d["filename"] != filename]
-        session_documents[session_id].append(doc_entry)
+        session_documents[session_id].insert(0, doc_entry)
         
         extracted_files.append({
             "filename": filename,
@@ -471,6 +472,40 @@ async def upload_documents(
         "message": f"Successfully ingested {len(extracted_files)} document(s) on-premise.",
         "files": extracted_files,
         "total_documents_in_session": len(session_documents[session_id])
+    }
+
+
+@router.get("/documents")
+async def get_session_documents(session_id: str = "analyzer"):
+    """Get list of active documents in the current session."""
+    docs = session_documents.get(session_id, [])
+    return {
+        "success": True,
+        "session_id": session_id,
+        "files": [{"filename": d["filename"], "size_kb": d["size_kb"], "word_count": d.get("word_count", 0)} for d in docs]
+    }
+
+
+@router.delete("/documents/{filename}")
+async def delete_session_document(filename: str, session_id: str = "analyzer"):
+    """Delete a specific document from the session cache."""
+    if session_id in session_documents:
+        session_documents[session_id] = [d for d in session_documents[session_id] if d["filename"] != filename]
+    return {
+        "success": True,
+        "deleted": filename,
+        "remaining": len(session_documents.get(session_id, []))
+    }
+
+
+@router.delete("/documents")
+async def clear_session_documents(session_id: str = "analyzer"):
+    """Clear all documents from the session cache."""
+    session_documents[session_id] = []
+    return {
+        "success": True,
+        "message": f"Session {session_id} documents cleared.",
+        "remaining": 0
     }
 
 
@@ -1136,7 +1171,7 @@ async def _handle_generation(query: str, thinking_trace: List[str], session: str
     # Detect domain context
     combined_text = (clean_query + " " + source_context).lower()
     is_resume_or_profile = any(k in combined_text for k in [
-        'resume', 'cv', 'candidate', 'profile', 'sandeep', 'sangeeth', 'experience', 'education', 'skills', 'curriculum vitae'
+        'resume', 'cv', 'candidate evaluation', 'applicant', 'curriculum vitae'
     ])
     is_refinery_context = any(k in combined_text for k in [
         'mrpl', 'c301', 'distillation', 'refinery', 'crude', 'pipeline', 'valve', 'column', 'tray', 'furnace', 'boiler'

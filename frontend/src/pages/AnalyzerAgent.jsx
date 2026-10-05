@@ -29,7 +29,9 @@ export default function AnalyzerAgent() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleFileUpload = async (e) => {
+  const [isAppending, setIsAppending] = useState(false)
+
+  const handleFileUpload = async (e, appendMode = false) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
     
@@ -52,8 +54,9 @@ export default function AnalyzerAgent() {
     ])
 
     try {
+      const shouldClear = !appendMode && !isAppending
       // Real multi-file upload to backend for local text extraction
-      const uploadRes = await apiClient.uploadDocuments(files, 'analyzer')
+      const uploadRes = await apiClient.uploadDocuments(files, 'analyzer', shouldClear)
       
       const newFiles = (uploadRes.files || []).map(f => ({
         name: f.filename,
@@ -61,11 +64,19 @@ export default function AnalyzerAgent() {
         words: f.word_count,
         chars: f.char_count
       }))
-      setUploadedFiles(prev => {
-        const existingNames = new Set(prev.map(p => p.name))
-        const filteredNew = newFiles.filter(n => !existingNames.has(n.name))
-        return [...prev, ...filteredNew]
-      })
+
+      let updatedList = newFiles
+      if (appendMode || isAppending) {
+        setUploadedFiles(prev => {
+          const existingNames = new Set(newFiles.map(n => n.name))
+          const keptPrev = prev.filter(p => !existingNames.has(p.name))
+          updatedList = [...newFiles, ...keptPrev]
+          return updatedList
+        })
+      } else {
+        setUploadedFiles(newFiles)
+        updatedList = newFiles
+      }
 
       setThinkingPlan([
         { id: 1, text: `Ingested ${newFiles.length} file(s) — total ${newFiles.reduce((s, f) => s + f.words, 0)} words extracted`, status: 'done' },
@@ -73,7 +84,8 @@ export default function AnalyzerAgent() {
       ])
 
       // Immediately run real analysis query on the extracted files
-      await runAnalysisQuery(`[Analyzer Mode] Analyze the uploaded document(s) and provide a comprehensive structured technical report.`)
+      const targetNames = updatedList.map(f => f.name).join(', ')
+      await runAnalysisQuery(`[Analyzer Mode] Analyze the document(s): ${targetNames}. Provide a comprehensive structured technical report.`, updatedList)
     } catch (err) {
       setThinkingPlan([{ id: 1, text: `Upload Error: ${err.message}`, status: 'done' }])
       setMessages(prev => [...prev, {
@@ -83,6 +95,36 @@ export default function AnalyzerAgent() {
       }])
     } finally {
       setIsProcessing(false)
+      setIsAppending(false)
+    }
+  }
+
+  const handleRemoveFile = async (fileName) => {
+    try {
+      await apiClient.deleteDocument(fileName, 'analyzer')
+      setUploadedFiles(prev => prev.filter(f => f.name !== fileName))
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        role: 'assistant',
+        content: `Removed \`${fileName}\` from active analysis session.`
+      }])
+    } catch (err) {
+      console.error('Failed to remove file:', err)
+    }
+  }
+
+  const handleClearAllFiles = async () => {
+    try {
+      await apiClient.clearDocuments('analyzer')
+      setUploadedFiles([])
+      setVisualData(null)
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        role: 'assistant',
+        content: `Cleared all session documents. Upload a new document to analyze.`
+      }])
+    } catch (err) {
+      console.error('Failed to clear files:', err)
     }
   }
 
@@ -98,12 +140,14 @@ export default function AnalyzerAgent() {
     await runAnalysisQuery(`[Analyzer Mode] ${userMsg.content}`)
   }
 
-  const runAnalysisQuery = async (queryText) => {
+  const runAnalysisQuery = async (queryText, currentDocs = null) => {
     setChecks([
       { id: 'math', label: 'Math & Parameter Verification', status: 'validating' },
       { id: 'concept', label: 'Core Structure & Entity Validation', status: 'validating' },
       { id: 'pipeline', label: 'Pipeline Air-Gap Integrity', status: 'validating' },
     ])
+
+    const activeList = currentDocs || uploadedFiles
 
     try {
       // Explicitly pass 'analyzer' session so supervisor grounds in session_documents
@@ -130,7 +174,7 @@ export default function AnalyzerAgent() {
         role: 'assistant',
         content: res.reply || 'Analysis complete.',
         showGenerateBtn: true,
-        sourceFiles: res.source_files || uploadedFiles.map(f => f.name)
+        sourceFiles: res.source_files || activeList.map(f => f.name)
       }])
     } catch (err) {
       setThinkingPlan([{ id: 1, text: `Analysis Error: ${err.message}`, status: 'done' }])
@@ -166,7 +210,7 @@ export default function AnalyzerAgent() {
         <div className="px-6 py-4 border-b border-surface-300/50 flex justify-between items-center bg-surface-200/30">
           <div>
             <h1 className="text-lg font-medium text-slate-200">Analyser Agent</h1>
-            <p className="text-xs text-slate-500">Upload multiple PDFs, logs, specs, or resumes for deep local structural analysis.</p>
+            <p className="text-xs text-slate-500">Upload multiple PDFs, logs, specs, or documents for deep local structural analysis.</p>
           </div>
           {uploadedFiles.length > 0 && (
             <div className="flex items-center gap-2">
@@ -179,21 +223,42 @@ export default function AnalyzerAgent() {
 
         {/* Uploaded File Chips Bar (if files exist) */}
         {uploadedFiles.length > 0 && (
-          <div className="px-6 py-2 bg-surface-200/40 border-b border-surface-300/40 flex items-center gap-2 overflow-x-auto text-xs">
-            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider shrink-0">Attached:</span>
-            {uploadedFiles.map((file, idx) => (
-              <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-300/70 text-slate-200 text-xs border border-surface-400/30 shrink-0">
-                <FileText className="w-3.5 h-3.5 text-amber-400" />
-                <span className="truncate max-w-[150px] font-medium">{file.name}</span>
-                <span className="text-[10px] text-slate-400">({file.size} KB)</span>
-              </div>
-            ))}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="text-[11px] text-amber-400 hover:text-amber-300 px-2 py-0.5 rounded border border-dashed border-amber-500/40 hover:bg-amber-500/10 transition-colors shrink-0"
-            >
-              + Add More
-            </button>
+          <div className="px-6 py-2.5 bg-surface-200/40 border-b border-surface-300/40 flex items-center justify-between gap-3 overflow-x-auto text-xs">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider shrink-0">Attached ({uploadedFiles.length}):</span>
+              {uploadedFiles.map((file, idx) => (
+                <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-300/70 text-slate-200 text-xs border border-surface-400/30 shrink-0">
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="truncate max-w-[150px] font-medium">{file.name}</span>
+                  <span className="text-[10px] text-slate-400">({file.size} KB)</span>
+                  <button
+                    onClick={() => handleRemoveFile(file.name)}
+                    title={`Remove ${file.name}`}
+                    className="ml-1 text-slate-400 hover:text-red-400 p-0.5 rounded transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  setIsAppending(true)
+                  fileInputRef.current?.click()
+                }}
+                className="text-[11px] text-amber-400 hover:text-amber-300 px-2.5 py-1 rounded border border-dashed border-amber-500/40 hover:bg-amber-500/10 transition-colors cursor-pointer"
+              >
+                + Add More
+              </button>
+              <button
+                onClick={handleClearAllFiles}
+                className="text-[11px] text-slate-400 hover:text-red-400 px-2.5 py-1 rounded border border-surface-400/40 hover:bg-red-500/10 transition-colors cursor-pointer"
+              >
+                Clear All
+              </button>
+            </div>
           </div>
         )}
 
