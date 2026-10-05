@@ -324,12 +324,19 @@ async def _handle_conversational(query: str, thinking_trace: List[str], session:
     """Handle general conversational queries — NOT routed to RAG."""
     thinking_trace.append("Intent: General conversation (no document lookup needed)")
 
-    # Build conversation context from history
+    # Build conversation context from history (truncate long outputs from other agents)
     history = chat_history.get(session, [])[-6:]  # Last 3 exchanges
     history_text = ""
     if len(history) > 1:
-        history_text = "\n".join([f"{m['role'].upper()}: {m['content']}" for m in history[:-1]])
-        history_text = f"\nRecent conversation:\n{history_text}\n"
+        history_lines = []
+        for m in history[:-1]:
+            content = m['content'] or ""
+            # Truncate long messages (e.g. from analyzer or generator) so they don't mess up the chat prompt
+            if len(content) > 300:
+                content = content[:300] + "... [truncated long response]"
+            history_lines.append(f"{m['role'].upper()}: {content}")
+        history_text = "\n".join(history_lines)
+        history_text = f"\n--- Recent Conversation Context ---\n{history_text}\n-----------------------------------\n"
 
     system_prompt = (
         "You are the MRPL Sovereign AI Assistant — a friendly, conversational, and highly capable AI. "
@@ -338,7 +345,7 @@ async def _handle_conversational(query: str, thinking_trace: List[str], session:
         "Be warm and natural. If the user says hi, greet them back briefly. "
         "If they ask what you can do, briefly list: document analysis, report generation, code execution, and engineering calculations. "
         "Do NOT generate random lists or points unless asked. "
-        "Do NOT output code unless asked."
+        "Do NOT output code unless asked.\n"
         f"{history_text}"
     )
 
@@ -978,9 +985,19 @@ async def execute_code(req: CodeExecuteRequest):
         code_to_run = "\n".join(injections) + "\n\n" + code_to_run
 
     try:
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, dir=tempfile.gettempdir(), encoding='utf-8') as f:
+        temp_dir = tempfile.mkdtemp(prefix='sih_sandbox_')
+        temp_path = os.path.join(temp_dir, 'script.py')
+        with open(temp_path, 'w', encoding='utf-8') as f:
             f.write(code_to_run)
-            temp_path = f.name
+
+        # Pre-seed realistic industrial sample dataset if script attempts to read CSV/data files
+        if any(term in code_to_run for term in ['read_csv', '.csv', 'input_data']):
+            csv_path = os.path.join(temp_dir, "input_data.csv")
+            if not os.path.exists(csv_path):
+                with open(csv_path, 'w', encoding='utf-8') as f_csv:
+                    f_csv.write("Time,Pressure,Temperature,FlowRate\n")
+                    for i in range(1, 11):
+                        f_csv.write(f"{i},{100.0 + i * 2.5},{75.0 + i * 1.2},{120.0 + i * 0.8}\n")
 
         # Check if Docker is available and responsive
         docker_bin = shutil.which("docker")
@@ -999,9 +1016,10 @@ async def execute_code(req: CodeExecuteRequest):
                     docker_cmd = [
                         'docker', 'run', '--rm', '-i',
                         '--network', 'none',  # Enforce air-gap
-                        '-v', f"{temp_path}:/sandbox/script.py:ro",
+                        '-v', f"{temp_dir}:/sandbox",
+                        '-w', '/sandbox',
                         'python:3.10-slim', 
-                        'python', '/sandbox/script.py'
+                        'python', 'script.py'
                     ]
                     d_res = subprocess.run(
                         docker_cmd,
@@ -1023,7 +1041,8 @@ async def execute_code(req: CodeExecuteRequest):
             # Fallback to local isolated python subprocess
             py_bin = sys.executable if sys.executable else "python"
             result = subprocess.run(
-                [py_bin, temp_path],
+                [py_bin, "script.py"],
+                cwd=temp_dir,
                 input=simulated_input,
                 capture_output=True,
                 text=True,
@@ -1033,7 +1052,7 @@ async def execute_code(req: CodeExecuteRequest):
             engine_name = "Host-Isolated Air-Gapped Python Sandbox (Docker Standby)"
 
         try:
-            os.unlink(temp_path)
+            shutil.rmtree(temp_dir, ignore_errors=True)
         except OSError:
             pass
 
